@@ -1,0 +1,36 @@
+export const patient = {
+  name: 'Rajesh Kumar',
+  age: 68,
+  language: 'Tamil',
+  conditions: ['Hypertension', 'Type 2 Diabetes', 'Mild Anxiety'],
+  medications: [
+    {
+      name: 'Metoprolol',
+      dosage: '25mg',
+      frequency: 'twice daily',
+      slot: 'morning',
+      compartment: 1,
+      autoExpire: false,
+      expiryDate: null,
+    },
+    {
+      name: 'Metformin',
+      dosage: '500mg',
+      frequency: 'with meals',
+      slot: 'afternoon',
+      compartment: 2,
+      autoExpire: false,
+      expiryDate: null,
+    },
+    {
+      name: 'Amlodipine',
+      dosage: '5mg',
+      frequency: 'once daily',
+      slot: 'night',
+      compartment: 3,
+      autoExpire: false,
+      expiryDate: null,
+    },
+  ],
+  caregiver: { name: 'Madhusoodhan', email: 'tgmadhusoodhan@gmail.com' },
+}

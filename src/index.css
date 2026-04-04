@@ -1,0 +1,104 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #F0F4F8;
+    color: #1F2937;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-lg p-6;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-[#1E3A5F] to-[#0EA5E9] text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all;
+  }
+
+  /* Section divider used in PrescriptionLibrary */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E5E7EB;
+  }
+}
+
+/* ── Bouncing dot loader (PrescriptionScanner) ── */
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%           { transform: translateY(-10px); }
+}
+
+.dot-1 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0s; }
+.dot-2 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0.2s; }
+.dot-3 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0.4s; }
+
+/* ── Voice waveform bars ── */
+@keyframes waveAnim {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1.0); }
+}
+
+.wave-bar {
+  animation: waveAnim 0.8s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* ── Online pulse indicator ── */
+@keyframes pulseLive {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.pulse-live {
+  animation: pulseLive 1.5s infinite;
+}
+
+/* ── Toast animations ── */
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-enter { animation: slideIn 0.3s ease forwards; }
+.toast-exit  { animation: slideOut 0.3s ease forwards; }
+
+/* ── Spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
