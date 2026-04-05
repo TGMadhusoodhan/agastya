@@ -1,99 +1,132 @@
-// src/components/PatientProfile.jsx
-import { useState } from 'react'
+// src/components/PatientProfile.jsx — dark glass
+import { useState, useEffect } from 'react'
 import { EditIcon, CheckIcon } from './Icons.jsx'
-import { useT } from '../contexts/LanguageContext.jsx'
+import { useT, useLang } from '../contexts/LanguageContext.jsx'
+import { translateNames } from '../utils/claudeApi.js'
+
+const inputStyle = {
+  background: 'rgba(10,22,34,0.7)',
+  border: '1px solid rgba(0,232,123,0.12)',
+  color: '#EDFAF3',
+  borderRadius: '0.875rem',
+  padding: '0.5rem 0.75rem',
+  width: '100%',
+  fontSize: '0.875rem',
+  outline: 'none',
+}
 
 export default function PatientProfile({ patient, onUpdate }) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState(patient)
-  const t = useT()
-  const tp = t.profile
+  const [isEditing,   setIsEditing]   = useState(false)
+  const [formData,    setFormData]    = useState(patient)
+  const [translated,  setTranslated]  = useState({})
+  const t    = useT()
+  const lang = useLang()
+  const tp   = t.profile
 
-  const handleSave = () => {
-    onUpdate(formData)
-    setIsEditing(false)
-  }
+  useEffect(() => {
+    if (lang === 'English' || !patient) { setTranslated({}); return }
+    const names = [patient.name, ...(patient.conditions || [])].filter(Boolean)
+    translateNames([...new Set(names)], lang).then(setTranslated).catch(() => {})
+  }, [patient?.name, lang])
+
+  const tx = name => (name ? translated[name] || name : name)
+
+  const handleSave = () => { onUpdate(formData); setIsEditing(false) }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1E3A5F] to-[#0EA5E9] rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
+      <div
+        className="relative rounded-2xl p-6 overflow-hidden"
+        style={{ background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,232,123,0.15)', backdropFilter: 'blur(20px)' }}
+      >
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,232,123,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,232,123,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">{tp.title}</h2>
-            <p className="text-white/80">{tp.subtitle}</p>
+            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--t1)' }}>{tp.title}</h2>
+            <p style={{ color: 'var(--t3)' }}>{tp.subtitle}</p>
           </div>
           <button
             onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className="px-4 py-2 bg-white/20 rounded-xl text-sm font-semibold hover:bg-white/30 transition-all"
+            className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all flex items-center gap-1.5"
+            style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.25)' }}
           >
-            <span className="flex items-center gap-1.5">{isEditing ? <><CheckIcon className="w-4 h-4" /> {tp.save}</> : <><EditIcon className="w-4 h-4" /> {tp.edit}</>}</span>
+            {isEditing
+              ? <><CheckIcon className="w-4 h-4" /> {tp.save}</>
+              : <><EditIcon  className="w-4 h-4" /> {tp.edit}</>
+            }
           </button>
         </div>
       </div>
 
-      {/* Profile Card */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-6 mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#1E3A5F] to-[#0EA5E9] rounded-full flex items-center justify-center text-white text-2xl font-bold">
-            {patient.name.split(' ').map(n => n[0]).join('')}
+      {/* Profile card */}
+      <div className="rounded-2xl p-6 space-y-5"
+        style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)' }}>
+
+        {/* Avatar + name */}
+        <div className="flex items-center gap-6">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black shrink-0"
+            style={{
+              background: 'linear-gradient(135deg,rgba(10,22,34,0.9),rgba(6,12,16,0.95))',
+              border: '2px solid rgba(0,232,123,0.3)',
+              color: '#00E87B',
+              boxShadow: '0 0 20px rgba(0,232,123,0.12)',
+              textShadow: '0 0 12px rgba(0,232,123,0.5)',
+            }}
+          >
+            {patient.name.split(' ').map(n => n[0]).join('').toUpperCase()}
           </div>
           <div className="flex-1">
             {isEditing ? (
-              <input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl mb-2 focus:border-[#0EA5E9] focus:outline-none"
-              />
+              <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                style={{ ...inputStyle, marginBottom: '0.5rem', fontWeight: '700', fontSize: '1rem' }} />
             ) : (
-              <h3 className="text-xl font-bold text-gray-800">{patient.name}</h3>
+              <h3 className="text-xl font-bold mb-0.5" style={{ color: 'var(--t1)' }}>{tx(patient.name)}</h3>
             )}
             {isEditing ? (
-              <input
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
-                type="number"
-                className="w-24 px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-[#0EA5E9] focus:outline-none"
-              />
+              <input value={formData.age} onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                type="number" style={{ ...inputStyle, width: '6rem' }} />
             ) : (
-              <p className="text-gray-500">{tp.yearsOld(patient.age)}</p>
+              <p style={{ color: 'var(--t3)' }}>{tp.yearsOld(patient.age)}</p>
             )}
           </div>
         </div>
 
         {/* Language */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{tp.language}</label>
+        <div>
+          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.language}</label>
           {isEditing ? (
-            <select
-              value={formData.language}
-              onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-[#0EA5E9] focus:outline-none"
-            >
+            <select value={formData.language} onChange={e => setFormData({ ...formData, language: e.target.value })} style={inputStyle}>
               <option>English</option>
               <option>Hindi</option>
               <option>Tamil</option>
               <option>Kannada</option>
             </select>
           ) : (
-            <div className="px-3 py-2 bg-gray-50 rounded-xl text-gray-700">{patient.language}</div>
+            <div className="px-3 py-2 rounded-xl text-sm"
+              style={{ background: 'rgba(0,232,123,0.05)', color: 'var(--t1)', border: '1px solid rgba(0,232,123,0.1)' }}>
+              {patient.language}
+            </div>
           )}
         </div>
 
         {/* Medical Conditions */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{tp.conditions}</label>
+        <div>
+          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.conditions}</label>
           <div className="flex flex-wrap gap-2">
             {(isEditing ? formData.conditions : patient.conditions).map((cond, i) => (
-              <span key={i} className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm">
-                {cond}
+              <span
+                key={i}
+                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                style={{ background: 'rgba(0,200,255,0.1)', color: '#00C8FF', border: '1px solid rgba(0,200,255,0.2)' }}
+              >
+                {isEditing ? cond : tx(cond)}
                 {isEditing && (
                   <button
-                    onClick={() => setFormData({
-                      ...formData,
-                      conditions: formData.conditions.filter(c => c !== cond)
-                    })}
-                    className="ml-2 text-sky-500 hover:text-red-500"
+                    onClick={() => setFormData({ ...formData, conditions: formData.conditions.filter(c => c !== cond) })}
+                    className="ml-1 hover:opacity-70 transition-opacity"
+                    style={{ color: '#00C8FF' }}
                   >
                     ×
                   </button>
@@ -104,12 +137,10 @@ export default function PatientProfile({ patient, onUpdate }) {
               <button
                 onClick={() => {
                   const newCond = prompt('Enter condition:')
-                  if (newCond) setFormData({
-                    ...formData,
-                    conditions: [...formData.conditions, newCond]
-                  })
+                  if (newCond) setFormData({ ...formData, conditions: [...formData.conditions, newCond] })
                 }}
-                className="px-3 py-1 border-2 border-dashed border-gray-300 rounded-full text-sm text-gray-500 hover:border-[#0EA5E9]"
+                className="px-3 py-1 border-2 border-dashed rounded-full text-sm transition-all"
+                style={{ borderColor: 'rgba(0,232,123,0.2)', color: 'var(--t3)' }}
               >
                 {tp.addCondition}
               </button>
@@ -119,27 +150,27 @@ export default function PatientProfile({ patient, onUpdate }) {
 
         {/* Caregiver */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{tp.emergency}</label>
+          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.emergency}</label>
           {isEditing ? (
             <div className="space-y-2">
               <input
                 value={formData.caregiver?.name || ''}
-                onChange={(e) => setFormData({ ...formData, caregiver: { ...formData.caregiver, name: e.target.value } })}
+                onChange={e => setFormData({ ...formData, caregiver: { ...formData.caregiver, name: e.target.value } })}
                 placeholder={tp.caregiverName}
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-[#0EA5E9] focus:outline-none"
+                style={inputStyle}
               />
               <input
                 value={formData.caregiver?.email || ''}
-                onChange={(e) => setFormData({ ...formData, caregiver: { ...formData.caregiver, email: e.target.value } })}
+                onChange={e => setFormData({ ...formData, caregiver: { ...formData.caregiver, email: e.target.value } })}
                 placeholder={tp.caregiverEmail}
                 type="email"
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-[#0EA5E9] focus:outline-none"
+                style={inputStyle}
               />
             </div>
           ) : (
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <p className="font-medium text-gray-800">{patient.caregiver?.name || tp.notSet}</p>
-              <p className="text-sm text-gray-500">{patient.caregiver?.email || ''}</p>
+            <div className="p-3 rounded-2xl" style={{ background: 'rgba(0,232,123,0.05)', border: '1px solid rgba(0,232,123,0.1)' }}>
+              <p className="font-medium" style={{ color: 'var(--t1)' }}>{patient.caregiver?.name || tp.notSet}</p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--t3)' }}>{patient.caregiver?.email || ''}</p>
             </div>
           )}
         </div>

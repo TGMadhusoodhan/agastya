@@ -3,102 +3,195 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg:           #060C10;
+  --bg-2:         #0A1520;
+  --glass:        rgba(10, 22, 34, 0.75);
+  --glass-2:      rgba(14, 28, 44, 0.8);
+  --green:        #00E87B;
+  --green-b:      #00FF87;
+  --green-dim:    rgba(0, 232, 123, 0.12);
+  --green-border: rgba(0, 232, 123, 0.14);
+  --green-glow:   0 0 24px rgba(0, 232, 123, 0.22);
+  --cyan:         #00C8FF;
+  --cyan-dim:     rgba(0, 200, 255, 0.12);
+  --red:          #FF4D6A;
+  --amber:        #FFAD00;
+  --purple:       #9F6EFF;
+  --t1:           #EDFAF3;
+  --t2:           #8AADA0;
+  --t3:           #3D5E52;
+  --t4:           #1C3028;
+  --border:       rgba(0, 232, 123, 0.09);
+  --border-hi:    rgba(0, 232, 123, 0.26);
+}
 
-  html, body, #root {
-    width: 100%;
-    min-height: 100vh;
-  }
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #root { width: 100%; min-height: 100vh; }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: #F0F4F8;
-    color: #1F2937;
+    background: var(--bg);
+    color: var(--t1);
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  /* ── Inputs ── */
+  input, select, textarea {
+    background: rgba(10, 22, 34, 0.6) !important;
+    color: var(--t1) !important;
+    border-color: var(--border) !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(0, 232, 123, 0.08) !important;
+    outline: none !important;
+  }
+  input::placeholder, textarea::placeholder { color: var(--t3) !important; }
+  option { background: #0A1520; color: var(--t1); }
 }
 
 @layer components {
+  /* ── Glass card ── */
   .card {
-    @apply bg-white rounded-2xl shadow-lg p-6;
+    @apply rounded-3xl p-6;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
   }
 
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .glass-card:hover {
+    border-color: var(--border-hi);
+    box-shadow: var(--green-glow);
+  }
+
+  /* ── Primary button ── */
   .btn-primary {
-    @apply bg-gradient-to-r from-[#1E3A5F] to-[#0EA5E9] text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all;
+    background: linear-gradient(135deg, #00C864, #00E87B);
+    color: #04100A;
+    @apply px-6 py-3 rounded-2xl font-bold transition-all duration-200;
+    box-shadow: 0 4px 20px rgba(0, 232, 123, 0.28);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 30px rgba(0, 232, 123, 0.42);
+    transform: translateY(-1px);
   }
 
-  /* Section divider used in PrescriptionLibrary */
+  /* ── Section divider ── */
   .section-divider {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.7rem;
+    gap: 10px;
+    font-size: 0.68rem;
     font-weight: 700;
-    color: #6B7280;
+    color: var(--t3);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
   }
   .section-divider::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: #E5E7EB;
+    background: var(--border);
   }
+
+  /* ── Status pills ── */
+  .pill-green  { background: rgba(0,232,123,0.12);  color: #00E87B; border: 1px solid rgba(0,232,123,0.22); }
+  .pill-cyan   { background: rgba(0,200,255,0.12);  color: #00C8FF; border: 1px solid rgba(0,200,255,0.22); }
+  .pill-red    { background: rgba(255,77,106,0.12); color: #FF4D6A; border: 1px solid rgba(255,77,106,0.22); }
+  .pill-amber  { background: rgba(255,173,0,0.12);  color: #FFAD00; border: 1px solid rgba(255,173,0,0.22); }
+  .pill-purple { background: rgba(159,110,255,0.12);color: #9F6EFF; border: 1px solid rgba(159,110,255,0.22); }
+  .pill-gray   { background: rgba(61,94,82,0.25);   color: var(--t2); border: 1px solid rgba(61,94,82,0.4); }
 }
 
-/* ── Bouncing dot loader (PrescriptionScanner) ── */
+/* ── Subtle dot grid background ─────────────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(0,232,123,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Glow blobs ─────────────────────────────────────────────────────────── */
+.blob-green {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,232,123,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.blob-cyan {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,200,255,0.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Neon text ───────────────────────────────────────────────────────────── */
+.neon { color: var(--green); text-shadow: 0 0 14px rgba(0,232,123,0.55); }
+.neon-cyan { color: var(--cyan); text-shadow: 0 0 14px rgba(0,200,255,0.55); }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes dotBounce {
   0%, 80%, 100% { transform: translateY(0); }
   40%           { transform: translateY(-10px); }
 }
+.dot-1 { animation: dotBounce 1.2s infinite ease-in-out 0.0s; }
+.dot-2 { animation: dotBounce 1.2s infinite ease-in-out 0.2s; }
+.dot-3 { animation: dotBounce 1.2s infinite ease-in-out 0.4s; }
 
-.dot-1 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0s; }
-.dot-2 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0.2s; }
-.dot-3 { animation: dotBounce 1.2s infinite ease-in-out; animation-delay: 0.4s; }
-
-/* ── Voice waveform bars ── */
 @keyframes waveAnim {
   0%, 100% { transform: scaleY(0.4); }
   50%       { transform: scaleY(1.0); }
 }
+.wave-bar { animation: waveAnim 0.8s ease-in-out infinite; transform-origin: bottom; }
 
-.wave-bar {
-  animation: waveAnim 0.8s ease-in-out infinite;
-  transform-origin: bottom;
-}
-
-/* ── Online pulse indicator ── */
 @keyframes pulseLive {
-  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
-  70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  0%   { box-shadow: 0 0 0 0   rgba(0,232,123,0.75); }
+  70%  { box-shadow: 0 0 0 8px rgba(0,232,123,0); }
+  100% { box-shadow: 0 0 0 0   rgba(0,232,123,0); }
 }
+.pulse-live { animation: pulseLive 1.6s infinite; }
 
-.pulse-live {
-  animation: pulseLive 1.5s infinite;
-}
-
-/* ── Toast animations ── */
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
+  from { transform: translateX(110%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 @keyframes slideOut {
   from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(110%); opacity: 0; }
 }
+.toast-enter { animation: slideIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.toast-exit  { animation: slideOut 0.25s ease forwards; }
 
-.toast-enter { animation: slideIn 0.3s ease forwards; }
-.toast-exit  { animation: slideOut 0.3s ease forwards; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { animation: spin 0.8s linear infinite; }
 
-/* ── Spinner ── */
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.spinner {
-  animation: spin 0.8s linear infinite;
+.fade-up { animation: fadeUp 0.4s ease forwards; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(0,232,123,0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
 }

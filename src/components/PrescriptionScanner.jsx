@@ -1,6 +1,18 @@
+// src/components/PrescriptionScanner.jsx — dark glass
 import { useState, useRef, useCallback } from 'react'
 import { analyzePrescription } from '../utils/claudeApi.js'
 import { CameraIcon, UploadIcon, ClipboardIcon, CheckIcon, XIcon } from './Icons.jsx'
+
+const inputStyle = {
+  background: 'rgba(10,22,34,0.7)',
+  border: '1px solid rgba(0,232,123,0.12)',
+  color: '#EDFAF3',
+  borderRadius: '0.875rem',
+  padding: '0.5rem 0.75rem',
+  width: '100%',
+  fontSize: '0.875rem',
+  outline: 'none',
+}
 
 function ReviewCard({ data, onConfirm, onCancel }) {
   const [edited, setEdited] = useState(data)
@@ -14,140 +26,128 @@ function ReviewCard({ data, onConfirm, onCancel }) {
     }))
   }
 
+  const cardStyle = { background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)', borderRadius: '1.5rem', padding: '1.5rem' }
+
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 space-y-5">
+    <div style={cardStyle} className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[#1E3A5F]">Review Extracted Prescription</h3>
-        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">
+        <h3 className="text-lg font-black" style={{ color: 'var(--t1)' }}>Review Extracted Prescription</h3>
+        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+          style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.2)' }}>
           AI Extracted
         </span>
       </div>
 
       {/* Clinic & Doctor */}
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs text-[#6B7280] font-semibold">Clinic</label>
-          <input
-            className="w-full mt-1 border-2 rounded-xl px-3 py-2 text-sm focus:border-sky-500 outline-none"
-            value={edited.clinicName || ''}
-            onChange={(e) => setEdited({ ...edited, clinicName: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="text-xs text-[#6B7280] font-semibold">Doctor</label>
-          <input
-            className="w-full mt-1 border-2 rounded-xl px-3 py-2 text-sm focus:border-sky-500 outline-none"
-            value={edited.doctorName || ''}
-            onChange={(e) => setEdited({ ...edited, doctorName: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="text-xs text-[#6B7280] font-semibold">Patient</label>
-          <input
-            className="w-full mt-1 border-2 rounded-xl px-3 py-2 text-sm focus:border-sky-500 outline-none"
-            value={edited.patientName || ''}
-            onChange={(e) => setEdited({ ...edited, patientName: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="text-xs text-[#6B7280] font-semibold">Diagnosis</label>
-          <input
-            className="w-full mt-1 border-2 rounded-xl px-3 py-2 text-sm focus:border-sky-500 outline-none"
-            value={edited.diagnosis || ''}
-            onChange={(e) => setEdited({ ...edited, diagnosis: e.target.value })}
-          />
-        </div>
+        {[
+          { label: 'Clinic',    key: 'clinicName'   },
+          { label: 'Doctor',    key: 'doctorName'   },
+          { label: 'Patient',   key: 'patientName'  },
+          { label: 'Diagnosis', key: 'diagnosis'    },
+        ].map(({ label, key }) => (
+          <div key={key}>
+            <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--t3)' }}>{label}</label>
+            <input
+              style={inputStyle}
+              value={edited[key] || ''}
+              onChange={(e) => setEdited({ ...edited, [key]: e.target.value })}
+            />
+          </div>
+        ))}
       </div>
 
       {/* Vitals */}
       {edited.vitals && Object.values(edited.vitals).some(Boolean) && (
-        <div className="bg-sky-50 rounded-xl p-3">
-          <div className="text-xs font-semibold text-sky-600 mb-2">Visit Vitals</div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            {edited.vitals.bp && <span className="bg-white rounded-lg px-2 py-1 shadow-sm">BP: {edited.vitals.bp}</span>}
-            {edited.vitals.hr && <span className="bg-white rounded-lg px-2 py-1 shadow-sm">HR: {edited.vitals.hr}</span>}
-            {edited.vitals.spo2 && <span className="bg-white rounded-lg px-2 py-1 shadow-sm">SpO2: {edited.vitals.spo2}%</span>}
-            {edited.vitals.temp && <span className="bg-white rounded-lg px-2 py-1 shadow-sm">Temp: {edited.vitals.temp}°F</span>}
-            {edited.vitals.weight && <span className="bg-white rounded-lg px-2 py-1 shadow-sm">Wt: {edited.vitals.weight}</span>}
+        <div className="rounded-2xl p-3" style={{ background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.15)' }}>
+          <div className="text-xs font-bold mb-2" style={{ color: '#00C8FF' }}>Visit Vitals</div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {edited.vitals.bp     && <span className="px-2 py-1 rounded-xl text-xs font-semibold" style={{ background: 'rgba(0,200,255,0.1)', color: '#00C8FF' }}>BP: {edited.vitals.bp}</span>}
+            {edited.vitals.hr     && <span className="px-2 py-1 rounded-xl text-xs font-semibold" style={{ background: 'rgba(255,77,106,0.1)', color: '#FF4D6A' }}>HR: {edited.vitals.hr}</span>}
+            {edited.vitals.spo2   && <span className="px-2 py-1 rounded-xl text-xs font-semibold" style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B' }}>SpO2: {edited.vitals.spo2}%</span>}
+            {edited.vitals.temp   && <span className="px-2 py-1 rounded-xl text-xs font-semibold" style={{ background: 'rgba(255,173,0,0.1)', color: '#FFAD00' }}>Temp: {edited.vitals.temp}°F</span>}
+            {edited.vitals.weight && <span className="px-2 py-1 rounded-xl text-xs font-semibold" style={{ background: 'rgba(159,110,255,0.1)', color: '#9F6EFF' }}>Wt: {edited.vitals.weight}</span>}
           </div>
         </div>
       )}
 
       {/* Medications */}
       <div>
-        <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-2">
+        <div className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--t3)' }}>
           Medications ({edited.medications?.length || 0})
         </div>
         <div className="space-y-3">
           {(edited.medications || []).map((med, idx) => (
-            <div key={idx} className="border-2 border-gray-100 rounded-xl p-3 space-y-2">
+            <div key={idx} className="rounded-2xl p-4 space-y-2" style={{ background: 'rgba(0,232,123,0.04)', border: '1px solid rgba(0,232,123,0.1)' }}>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-[#1E3A5F] text-white rounded-full text-xs flex items-center justify-center font-bold shrink-0">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0"
+                  style={{ background: 'rgba(0,232,123,0.15)', color: '#00E87B' }}>
                   {idx + 1}
                 </div>
                 <input
-                  className="flex-1 border-2 rounded-xl px-3 py-1.5 text-sm font-semibold focus:border-sky-500 outline-none"
+                  style={{ ...inputStyle, flex: 1, fontWeight: 700 }}
                   value={med.name || ''}
                   onChange={(e) => updateMed(idx, 'name', e.target.value)}
                   placeholder="Medication name"
                 />
                 <input
-                  className="w-24 border-2 rounded-xl px-3 py-1.5 text-sm focus:border-sky-500 outline-none"
+                  style={{ ...inputStyle, width: '6rem' }}
                   value={med.dosage || ''}
                   onChange={(e) => updateMed(idx, 'dosage', e.target.value)}
                   placeholder="Dosage"
                 />
               </div>
-              <div className="flex gap-2 ml-8">
-                <div className="flex gap-1 items-center text-xs text-[#6B7280]">
-                  <span className="bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">
-                    {med.frequencyCode || med.frequency}
+              <div className="flex gap-1.5 flex-wrap ml-9">
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={{ background: 'rgba(0,200,255,0.1)', color: '#00C8FF', border: '1px solid rgba(0,200,255,0.2)' }}>
+                  {med.frequencyCode || med.frequency}
+                </span>
+                {med.durationDays && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: 'rgba(255,173,0,0.1)', color: '#FFAD00', border: '1px solid rgba(255,173,0,0.2)' }}>
+                    {med.durationDays} days
                   </span>
-                  {med.durationDays && (
-                    <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                      {med.durationDays} days
-                    </span>
-                  )}
-                  <span className={`px-2 py-0.5 rounded-full font-medium ${
-                    med.slot === 'morning' ? 'bg-yellow-100 text-yellow-700' :
-                    med.slot === 'afternoon' ? 'bg-orange-100 text-orange-700' :
-                    med.slot === 'night' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {med.slot}
-                  </span>
-                  <span className="bg-[#1E3A5F]/10 text-[#1E3A5F] px-2 py-0.5 rounded-full font-medium">
-                    Compartment {med.compartment}
-                  </span>
-                </div>
+                )}
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={{
+                    background: med.slot === 'morning' ? 'rgba(255,184,0,0.1)' : med.slot === 'afternoon' ? 'rgba(255,107,53,0.1)' : med.slot === 'night' ? 'rgba(0,200,255,0.1)' : 'rgba(255,255,255,0.05)',
+                    color: med.slot === 'morning' ? '#FFB800' : med.slot === 'afternoon' ? '#FF6B35' : med.slot === 'night' ? '#00C8FF' : 'var(--t3)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                  {med.slot}
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={{ background: 'rgba(0,232,123,0.08)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.15)' }}>
+                  Compartment {med.compartment}
+                </span>
               </div>
               {med.expiryDate && (
-                <div className="ml-8 text-xs text-emerald-600">
-                  Auto-expires: {med.expiryDate}
-                </div>
+                <div className="ml-9 text-xs" style={{ color: '#00E87B' }}>Auto-expires: {med.expiryDate}</div>
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Notes */}
       {edited.notes && (
-        <div className="bg-gray-50 rounded-xl p-3 text-sm text-[#6B7280]">
-          <span className="font-semibold">Notes: </span>{edited.notes}
+        <div className="rounded-2xl p-3 text-sm" style={{ background: 'rgba(255,173,0,0.06)', border: '1px solid rgba(255,173,0,0.15)', color: '#FFAD00' }}>
+          <span className="font-semibold">Notes: </span>
+          <span style={{ color: 'var(--t2)' }}>{edited.notes}</span>
         </div>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-1">
         <button
           onClick={() => onConfirm(edited)}
-          className="flex-1 bg-[#1E3A5F] text-white py-3 rounded-xl font-bold hover:bg-[#152d4a] transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2"
+          style={{ background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 20px rgba(0,232,123,0.25)' }}
         >
-          <CheckIcon className="w-4 h-4" /> Confirm & Save to Library
+          <CheckIcon className="w-4 h-4" /> Confirm & Save
         </button>
         <button
           onClick={onCancel}
-          className="px-6 py-3 border-2 border-gray-200 text-[#6B7280] rounded-xl font-semibold hover:border-red-300 hover:text-red-500 transition-all flex items-center gap-1"
+          className="px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-1.5"
+          style={{ background: 'rgba(255,77,106,0.08)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.2)' }}
         >
           <XIcon className="w-4 h-4" /> Discard
         </button>
@@ -157,7 +157,7 @@ function ReviewCard({ data, onConfirm, onCancel }) {
 }
 
 export default function PrescriptionScanner({ onSaved, addToast }) {
-  const [mode, setMode] = useState('idle') // idle | camera | loading | review | error
+  const [mode, setMode] = useState('idle')
   const [capturedImage, setCapturedImage] = useState(null)
   const [capturedBlob, setCapturedBlob] = useState(null)
   const [extractedData, setExtractedData] = useState(null)
@@ -177,15 +177,11 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
   const startCamera = useCallback(async () => {
     setCameraError(false)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing },
-      })
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } })
       streamRef.current = stream
       if (videoRef.current) videoRef.current.srcObject = stream
       setMode('camera')
-    } catch {
-      setCameraError(true)
-    }
+    } catch { setCameraError(true) }
   }, [facing])
 
   const capture = useCallback(async () => {
@@ -197,8 +193,6 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
     const base64 = dataUrl.split(',')[1]
     stopCamera()
-
-    // Convert to blob for storage
     canvas.toBlob((blob) => setCapturedBlob(blob), 'image/jpeg', 0.85)
     setCapturedImage(dataUrl)
     await runAnalysis(base64)
@@ -213,9 +207,7 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
     } catch (err) {
       console.error('analyzePrescription error:', err)
       setMode('error')
-      // Show the real error so we can debug it
-      const msg = err?.message || 'Unknown error'
-      addToast(`Scan failed: ${msg}`, 'error', 8000)
+      addToast(`Scan failed: ${err?.message || 'Unknown error'}`, 'error', 8000)
     }
   }
 
@@ -224,9 +216,9 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
     if (!file) return
     const reader = new FileReader()
     reader.onload = async (ev) => {
-      const dataUrl = ev.target.result
+      const dataUrl  = ev.target.result
       const mediaType = dataUrl.split(';')[0].split(':')[1] || 'image/jpeg'
-      const base64 = dataUrl.split(',')[1]
+      const base64   = dataUrl.split(',')[1]
       setCapturedImage(dataUrl)
       setCapturedBlob(file)
       await runAnalysis(base64, mediaType)
@@ -234,9 +226,7 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
     reader.readAsDataURL(file)
   }, [])
 
-  const handleConfirm = useCallback((data) => {
-    onSaved(data, capturedBlob)
-  }, [onSaved, capturedBlob])
+  const handleConfirm = useCallback((data) => onSaved(data, capturedBlob), [onSaved, capturedBlob])
 
   const reset = () => {
     stopCamera()
@@ -246,71 +236,75 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
     setCapturedBlob(null)
   }
 
+  const cardStyle = { background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)', borderRadius: '1.5rem', padding: '1.5rem' }
+
   return (
     <div className="space-y-4">
       {mode !== 'review' && (
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#1E3A5F] mb-2">Scan Prescription Slip</h2>
-          <p className="text-sm text-[#6B7280] mb-4">
-            Supports handwritten Indian clinic prescriptions — mixed Kannada, Hindi, Tamil and English
-          </p>
+        <div style={cardStyle} className="space-y-5">
+          {/* Header */}
+          <div>
+            <h2 className="text-xl font-black" style={{ color: 'var(--t1)' }}>Scan Prescription Slip</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--t3)' }}>
+              Supports handwritten Indian clinic prescriptions — mixed Kannada, Hindi, Tamil and English
+            </p>
+          </div>
 
-          {mode === 'camera' ? (
+          {/* Loading */}
+          {mode === 'loading' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+                <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#00C864', boxShadow: '0 0 8px #00C864' }} />
+                <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+              </div>
+              <p className="font-bold" style={{ color: 'var(--t1)' }}>Agastya is reading your prescription…</p>
+              <p className="text-xs text-center" style={{ color: 'var(--t3)' }}>Decoding handwriting, medications, and dosages</p>
+            </div>
+          )}
+
+          {/* Camera live */}
+          {mode === 'camera' && (
             <div className="space-y-3">
-              <div className="relative rounded-xl overflow-hidden bg-black">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full max-h-80 object-cover"
-                />
-                <div className="absolute inset-0 border-2 border-amber-400 rounded-xl pointer-events-none opacity-70" />
-                <div className="absolute bottom-3 left-0 right-0 text-center text-white text-xs bg-black/40 py-1">
+              <div className="relative rounded-2xl overflow-hidden" style={{ background: '#000' }}>
+                <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-80 object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-3/4 h-2/3 rounded-2xl" style={{ border: '2px solid rgba(0,232,123,0.6)', boxShadow: '0 0 20px rgba(0,232,123,0.15) inset' }} />
+                </div>
+                <div className="absolute bottom-3 left-0 right-0 text-center text-xs py-1" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(0,232,123,0.8)' }}>
                   Hold prescription flat and steady
                 </div>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={capture}
-                  className="flex-1 bg-amber-500 text-white py-3 rounded-xl font-semibold hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 20px rgba(0,232,123,0.25)' }}
                 >
                   <CameraIcon className="w-5 h-5" /> Scan Prescription
                 </button>
                 <button
                   onClick={() => { stopCamera(); setMode('idle') }}
-                  className="px-4 py-3 border-2 border-red-300 text-red-500 rounded-xl font-semibold hover:bg-red-50 transition-all"
+                  className="px-4 py-3 rounded-2xl"
+                  style={{ background: 'rgba(255,77,106,0.1)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.2)' }}
                 >
                   <XIcon className="w-5 h-5" />
                 </button>
               </div>
             </div>
-          ) : mode === 'loading' ? (
-            <div className="flex flex-col items-center justify-center py-14 gap-4">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-amber-500 rounded-full dot-1" />
-                <div className="w-3 h-3 bg-amber-500 rounded-full dot-2" />
-                <div className="w-3 h-3 bg-amber-500 rounded-full dot-3" />
-              </div>
-              <p className="text-[#6B7280] font-medium text-center">
-                Agastya is reading your prescription...
-              </p>
-              <p className="text-xs text-[#9CA3AF] text-center">
-                Decoding handwriting, medications, and dosages
-              </p>
-            </div>
-          ) : (
+          )}
+
+          {/* Idle / error */}
+          {(mode === 'idle' || mode === 'error') && (
             <div className="space-y-4">
               {mode === 'error' && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm space-y-1">
-                  <div className="font-semibold">Scan failed — check browser console for details</div>
-                  <div className="text-xs text-red-600">
-                    Common causes: API key not set in .env · Network error · Image too large
-                  </div>
+                <div className="rounded-2xl p-3 text-sm" style={{ background: 'rgba(255,77,106,0.08)', border: '1px solid rgba(255,77,106,0.2)' }}>
+                  <div className="font-semibold" style={{ color: '#FF4D6A' }}>Scan failed — check browser console for details</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--t3)' }}>Common causes: API key not set · Network error · Image too large</div>
                 </div>
               )}
               {cameraError && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3 text-sm">
+                <div className="rounded-2xl p-3 text-sm" style={{ background: 'rgba(255,173,0,0.08)', border: '1px solid rgba(255,173,0,0.2)', color: '#FFAD00' }}>
                   Camera access denied — please upload a photo instead.
                 </div>
               )}
@@ -318,51 +312,41 @@ export default function PrescriptionScanner({ onSaved, addToast }) {
               <div className="flex gap-3">
                 <button
                   onClick={startCamera}
-                  className="flex-1 bg-amber-500 text-white py-3 rounded-xl font-semibold hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 16px rgba(0,232,123,0.2)' }}
                 >
                   <CameraIcon className="w-5 h-5" /> Camera
                 </button>
                 <button
                   onClick={() => fileRef.current?.click()}
-                  className="flex-1 border-2 border-amber-500 text-amber-600 py-3 rounded-xl font-semibold hover:bg-amber-50 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(0,232,123,0.08)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.2)' }}
                 >
                   <UploadIcon className="w-5 h-5" /> Upload Photo
                 </button>
               </div>
 
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-
               <div
-                className="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50/30 transition-all"
+                className="rounded-2xl p-10 text-center cursor-pointer transition-all"
+                style={{ border: '2px dashed rgba(0,232,123,0.15)' }}
                 onClick={() => fileRef.current?.click()}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,232,123,0.35)'; e.currentTarget.style.background = 'rgba(0,232,123,0.02)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,232,123,0.15)'; e.currentTarget.style.background = 'transparent' }}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const file = e.dataTransfer.files[0]
-                  if (file) handleFileUpload({ target: { files: [file] } })
-                }}
+                onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) handleFileUpload({ target: { files: [file] } }) }}
               >
-                <div className="flex justify-center mb-2"><ClipboardIcon className="w-8 h-8 text-amber-400" /></div>
-                <p className="text-amber-600 font-medium text-sm">Drop prescription photo here</p>
-                <p className="text-[#9CA3AF] text-xs mt-1">JPG, PNG, HEIC supported</p>
+                <ClipboardIcon className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(0,232,123,0.3)' }} />
+                <p className="font-semibold text-sm" style={{ color: '#00E87B' }}>Drop prescription photo here</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--t3)' }}>JPG, PNG, HEIC supported</p>
               </div>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </div>
           )}
         </div>
       )}
 
       {mode === 'review' && extractedData && (
-        <ReviewCard
-          data={extractedData}
-          onConfirm={handleConfirm}
-          onCancel={reset}
-        />
+        <ReviewCard data={extractedData} onConfirm={handleConfirm} onCancel={reset} />
       )}
     </div>
   )

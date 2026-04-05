@@ -116,7 +116,7 @@ export default function PharmacyVoice({ med, language = 'Tamil', onClose }) {
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full pulse-live" />
+          <div className="w-2 h-2 rounded-full pulse-live" style={{ background: '#00E87B' }} />
           <span className="text-white/60 text-sm font-semibold uppercase tracking-widest">
             {t.label}
           </span>
@@ -141,8 +141,8 @@ export default function PharmacyVoice({ med, language = 'Tamil', onClose }) {
           </div>
 
           {/* Native language — even larger */}
-          <div className="bg-gradient-to-br from-[#1E3A5F] to-[#0EA5E9] rounded-2xl px-6 py-6 border border-sky-400/30 shadow-2xl">
-            <p className="text-sky-200 text-xs font-semibold uppercase tracking-widest mb-3">{language}</p>
+          <div className="rounded-2xl px-6 py-6 shadow-2xl" style={{ background: 'linear-gradient(135deg,rgba(0,200,36,0.25),rgba(0,232,123,0.12))', border: '1px solid rgba(0,232,123,0.35)' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#00E87B' }}>{language}</p>
             <p className="text-white text-3xl font-bold leading-snug">{phrase}</p>
           </div>
         </div>
@@ -157,12 +157,12 @@ export default function PharmacyVoice({ med, language = 'Tamil', onClose }) {
         {/* Big SPEAK button */}
         <button
           onClick={handleSpeak}
-          className={`w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 text-white font-bold text-xl shadow-2xl transition-all duration-200 select-none
-            ${speaking
-              ? 'bg-red-500 hover:bg-red-600 scale-95 shadow-red-500/40'
-              : 'bg-gradient-to-br from-[#0EA5E9] to-[#1E3A5F] hover:scale-105 shadow-sky-500/40'
-            }`}
-          style={{ boxShadow: speaking ? '0 0 60px rgba(239,68,68,0.4)' : '0 0 60px rgba(14,165,233,0.4)' }}
+          className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 text-white font-bold text-xl shadow-2xl transition-all duration-200 select-none"
+          style={
+            speaking
+              ? { background: 'linear-gradient(135deg,#cc2a40,#FF4D6A)', boxShadow: '0 0 60px rgba(255,77,106,0.4)', transform: 'scale(0.95)' }
+              : { background: 'linear-gradient(135deg,#00C864,#00E87B)', boxShadow: '0 0 60px rgba(0,232,123,0.4)', color: '#04100A' }
+          }
         >
           {speaking ? (
             <>

@@ -209,6 +209,32 @@ export async function generateCaregiverMessage(patient, medication, reason) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// translateNames — batch-transliterate medicine/person names into target script
+// Returns { original: translated, ... } — falls back to empty {} on error
+// ─────────────────────────────────────────────────────────────────────────
+export async function translateNames(names, targetLanguage) {
+  if (!targetLanguage || targetLanguage === 'English' || !names || names.length === 0) return {}
+  try {
+    const systemPrompt = `You are a medical transliteration assistant. Transliterate or translate names into the target language script. Return ONLY valid JSON, no markdown, no extra text.`
+    const userPrompt = `Transliterate/translate the following into ${targetLanguage} script.
+Rules:
+- Medication names: use standard pharmaceutical transliteration (phonetic mapping).
+- Person names (doctors, patients): phonetic transliteration into ${targetLanguage} script.
+- Clinic/hospital names: transliterate into ${targetLanguage} script.
+- Keep numbers, dosages, and abbreviations (like mg, OD, BD) as-is in Latin script.
+
+Names to translate: ${JSON.stringify(names)}
+
+Return ONLY a JSON object mapping each original name to its transliteration:
+{ "original name": "transliterated name", ... }`
+    const raw = await callClaude([{ role: 'user', content: userPrompt }], systemPrompt)
+    return parseJSON(raw)
+  } catch {
+    return {}
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // translateInstructions
 // ─────────────────────────────────────────────────────────────────────────
 export async function translateInstructions(text, targetLanguage) {
