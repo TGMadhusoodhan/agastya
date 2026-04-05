@@ -1,8 +1,10 @@
 // src/components/PatientProfile.jsx — dark glass
 import { useState, useEffect } from 'react'
-import { EditIcon, CheckIcon } from './Icons.jsx'
+import { EditIcon, CheckIcon, LogoutIcon } from './Icons.jsx'
 import { useT, useLang } from '../contexts/LanguageContext.jsx'
 import { translateNames } from '../utils/claudeApi.js'
+import { signOut, updateProfile } from 'firebase/auth'
+import { auth } from '../utils/firebase.js'
 
 const inputStyle = {
   background: 'rgba(10,22,34,0.7)',
@@ -19,6 +21,7 @@ export default function PatientProfile({ patient, onUpdate }) {
   const [isEditing,   setIsEditing]   = useState(false)
   const [formData,    setFormData]    = useState(patient)
   const [translated,  setTranslated]  = useState({})
+  const [loggingOut,  setLoggingOut]  = useState(false)
   const t    = useT()
   const lang = useLang()
   const tp   = t.profile
@@ -31,7 +34,19 @@ export default function PatientProfile({ patient, onUpdate }) {
 
   const tx = name => (name ? translated[name] || name : name)
 
-  const handleSave = () => { onUpdate(formData); setIsEditing(false) }
+  const handleSave = async () => {
+    // Sync name to Firebase if changed
+    if (auth.currentUser && formData.name && formData.name !== auth.currentUser.displayName) {
+      try { await updateProfile(auth.currentUser, { displayName: formData.name }) } catch {}
+    }
+    onUpdate(formData)
+    setIsEditing(false)
+  }
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try { await signOut(auth) } catch { setLoggingOut(false) }
+  }
 
   return (
     <div className="space-y-5">
@@ -174,6 +189,25 @@ export default function PatientProfile({ patient, onUpdate }) {
             </div>
           )}
         </div>
+
+        {/* Signed-in email */}
+        {auth.currentUser?.email && (
+          <div className="pt-1 pb-1">
+            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--t3)' }}>Signed in as</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--t2)' }}>{auth.currentUser.email}</div>
+          </div>
+        )}
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+          style={{ background: 'rgba(255,77,106,0.08)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.2)' }}
+        >
+          <LogoutIcon className="w-4 h-4" />
+          {loggingOut ? 'Signing out…' : 'Sign Out'}
+        </button>
       </div>
     </div>
   )

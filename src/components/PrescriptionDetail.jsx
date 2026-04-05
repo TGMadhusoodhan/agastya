@@ -4,6 +4,8 @@ import { deletePrescription } from '../utils/prescriptionDB.js'
 import DispenserBridge from './DispenserBridge.jsx'
 import { useT, useLang } from '../contexts/LanguageContext.jsx'
 import { translateNames } from '../utils/claudeApi.js'
+import { speak } from '../utils/voiceEngine.js'
+import { VolumeIcon } from './Icons.jsx'
 
 function daysRemaining(expiryDate) {
   if (!expiryDate) return null
@@ -230,6 +232,14 @@ export default function PrescriptionDetail({ prescription, onBack, onMedications
                   <span className="font-bold" style={{ color: 'var(--t1)' }}>{tx(med.name)}</span>
                   {med.dosage && <span className="text-sm" style={{ color: 'var(--t3)' }}>{med.dosage}</span>}
                   <MedStatusBadge med={med} tp={tp} ts={t.schedule} />
+                  <button
+                    onClick={() => speak(`${med.name}. ${med.dosage || ''}`, lang)}
+                    title="Pronounce medication name"
+                    className="w-6 h-6 flex items-center justify-center rounded-lg transition-all hover:scale-110"
+                    style={{ background: 'rgba(159,110,255,0.12)', color: '#9F6EFF', border: '1px solid rgba(159,110,255,0.25)' }}
+                  >
+                    <VolumeIcon className="w-3 h-3" />
+                  </button>
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
                   <span className="text-xs px-2 py-0.5 rounded-full"

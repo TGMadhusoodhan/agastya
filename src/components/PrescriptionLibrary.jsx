@@ -1,8 +1,9 @@
 // src/components/PrescriptionLibrary.jsx — dark glass
 import { useState, useMemo, useEffect } from 'react'
-import { PillIcon, ClipboardIcon, SearchIcon, CalendarIcon, BoxIcon, UserIcon } from './Icons.jsx'
+import { PillIcon, ClipboardIcon, SearchIcon, CalendarIcon, BoxIcon, UserIcon, VolumeIcon } from './Icons.jsx'
 import { useT, useLang } from '../contexts/LanguageContext.jsx'
 import { translateNames } from '../utils/claudeApi.js'
+import { speak } from '../utils/voiceEngine.js'
 
 const CONDITION_COLORS = {
   'Fever & Infections': '#FF4D6A',
@@ -22,7 +23,7 @@ function daysRemaining(expiryDate) {
   return Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24))
 }
 
-function PrescriptionCard({ prescription, onView, tp, tx }) {
+function PrescriptionCard({ prescription, onView, tp, tx, lang }) {
   const color      = getConditionColor(prescription.conditionCategory)
   const earliest   = prescription.medications
     ?.filter(m => m.expiryDate && m.status !== 'expired')
@@ -73,6 +74,20 @@ function PrescriptionCard({ prescription, onView, tp, tx }) {
           <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--t4)' }}>
             <PillIcon className="w-3.5 h-3.5" />
             <span>{prescription.medications?.length || 0} med{prescription.medications?.length !== 1 ? 's' : ''}</span>
+            {prescription.medications?.length > 0 && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  const names = prescription.medications.map(m => m.name).join('. ')
+                  speak(names, lang)
+                }}
+                title="Pronounce medication names"
+                className="w-5 h-5 flex items-center justify-center rounded-md transition-all hover:scale-110"
+                style={{ background: 'rgba(159,110,255,0.12)', color: '#9F6EFF', border: '1px solid rgba(159,110,255,0.2)' }}
+              >
+                <VolumeIcon className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {prescription.status === 'active' && earliest !== undefined && (
@@ -101,6 +116,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
   const t    = useT()
   const lang = useLang()
   const tp   = t.prescriptions
+
 
   useEffect(() => {
     if (lang === 'English' || !prescriptions?.length) { setTranslated({}); return }
@@ -238,7 +254,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {items.map(p => (
-                  <PrescriptionCard key={p.id} prescription={p} onView={onView} tp={tp} tx={tx} />
+                  <PrescriptionCard key={p.id} prescription={p} onView={onView} tp={tp} tx={tx} lang={lang} />
                 ))}
               </div>
             </div>

@@ -2,9 +2,9 @@
 
 > **Knowledge · Care · Intelligence**
 
-Agastya is an AI-powered medication management web app built for Indian households. It uses Claude AI vision to scan pill bottle labels and handwritten clinic prescriptions, manages a daily medication schedule, integrates with a physical smart dispenser, and supports multilingual voice output — making medication management accessible to elderly patients across language barriers.
+Agastya is an AI-powered medication management web app built for Indian households. It uses Claude AI vision to scan pill bottle labels and handwritten clinic prescriptions, manages a daily medication schedule with a smart physical dispenser integration, and supports multilingual voice output — making medication management accessible to elderly patients across language barriers.
 
-Built at a hackathon — April 2025.
+**Built in 24 hours for [ScarlettHacks](https://scarletthacks.com) hackathon by ACM IIT.**
 
 ---
 
@@ -20,7 +20,7 @@ Built at a hackathon — April 2025.
 - Scans **handwritten Indian clinic prescriptions**, including mixed regional scripts — Kannada, Hindi, Tamil, and English
 - Understands Indian prescription shorthand: `OD`, `BD`, `TDS`, `QID`, `HS`, `SOS`
 - Extracts clinic name, doctor name, patient details, diagnosis, visit vitals, and all medications with dosages and durations
-- Auto-calculates **course expiry dates** from duration codes (e.g. "x10 days", "5D", "1/52")
+- Auto-calculates **course expiry dates** from duration codes (e.g. `x10 days`, `5D`, `1/52`)
 - Lets you **review and correct** the AI extraction before saving
 
 ### Prescription Library
@@ -37,14 +37,13 @@ Built at a hackathon — April 2025.
 ### Smart Dispenser Integration
 - Sends dispense commands to a physical **IoT pill dispenser** over local HTTP (`localhost:5000`)
 - Each medication is assigned a compartment number (morning = 1, afternoon = 2, night = 3)
-- Countdown animation before dispensing
+- A companion **Flask bridge server** (`dispenser-bridge/server.py`) coordinates between the React app and a Blender 3D animation of the dispenser
 - Gracefully falls back when the dispenser is offline
 
 ### Health Vitals Dashboard
 - Displays heart rate, SpO₂, stress score, and sleep quality
-- Designed to connect to **Samsung Health via Health Connect**
 - Animated health score ring calculated from adherence + vitals status
-- Contextual health insights based on the patient's medication and vitals
+- Designed to connect to **Samsung Health via Health Connect**
 
 ### Adherence History
 - 30-day adherence log showing taken on time / taken late / missed
@@ -58,7 +57,12 @@ Built at a hackathon — April 2025.
 - Full UI available in: **English, Hindi, Tamil, Kannada, Spanish**
 - Claude AI transliterates medication and patient names into the patient's script
 - **Pharmacy Voice Mode** — full-screen mode to show pharmacists, with voice readout of medication name and instructions in the patient's language
-- Uses the **Web Speech API** with smart voice selection (prefers Google Cloud voices; falls back to espeak)
+- Uses the **Web Speech API** with smart voice selection
+
+### Firebase Authentication
+- Email/password sign-in and sign-up with email verification
+- Password reset flow
+- Auth state drives the entire app — unauthenticated users see a dedicated login page
 
 ### Patient Profile
 - Editable name, age, language, medical conditions, and caregiver contact
@@ -73,11 +77,12 @@ Built at a hackathon — April 2025.
 | Frontend | React 18 + Vite 5 |
 | Styling | Tailwind CSS 3 + custom CSS variables |
 | AI / Vision | Claude API (`claude-opus-4-5`) — vision + text |
-| Local Storage | IndexedDB via `idb` |
+| Auth | Firebase Authentication |
+| Local Storage | IndexedDB via `idb` (with `localStorage` fallback) |
 | Email Alerts | EmailJS |
 | Voice Output | Web Speech API (`speechSynthesis`) |
-| Proxy Server | Flask + Flask-CORS (Python) — optional |
-| Hardware | IoT pill dispenser over HTTP (optional) |
+| Dispenser Bridge | Flask + Flask-CORS (Python) |
+| Hardware | IoT pill dispenser + Blender 3D animation (optional) |
 
 ---
 
@@ -87,7 +92,9 @@ Built at a hackathon — April 2025.
 agastya/
 ├── src/
 │   ├── App.jsx                        # Root — tab routing, global state, toast system
+│   ├── main.jsx                       # React entry point + Firebase auth provider
 │   ├── components/
+│   │   ├── AuthPage.jsx               # Login / Signup / Password reset page
 │   │   ├── Dashboard.jsx              # Home — health score ring, metric cards, quick actions
 │   │   ├── Scanner.jsx                # Pill bottle camera/upload scanner
 │   │   ├── MedAnalysis.jsx            # AI scan results — interactions, instructions, actions
@@ -108,21 +115,26 @@ agastya/
 │   ├── utils/
 │   │   ├── claudeApi.js               # All Claude API calls — scan, prescribe, translate, alert
 │   │   ├── prescriptionDB.js          # IndexedDB CRUD + auto-expiry logic
+│   │   ├── firebase.js                # Firebase app + auth initialisation
 │   │   ├── dispenser.js               # IoT dispenser HTTP client
 │   │   ├── emailAlert.js              # EmailJS caregiver alert sender
 │   │   ├── voiceEngine.js             # Web Speech API wrapper (Chrome/Linux safe)
 │   │   ├── healthData.js              # Vitals data + normal-range calculations
 │   │   └── i18n.js                    # UI string translations (EN, HI, TA, KN, ES)
 │   ├── contexts/
+│   │   ├── AuthContext.jsx            # Firebase auth state provider + useAuth hook
 │   │   └── LanguageContext.jsx        # Language provider + useT / useLang hooks
 │   └── data/
 │       ├── mockPatient.js             # Default patient seed data
 │       ├── mockPrescriptions.js       # Sample prescriptions for first-run seeding
 │       ├── mockVitals.js              # Mock vitals reference values
 │       └── mockHistory.js             # 30-day adherence history seed data
-├── proxy_server.py                    # Optional Flask proxy for the Claude API
+├── dispenser-bridge/
+│   ├── server.py                      # Flask bridge — coordinates React ↔ Blender dispenser
+│   └── blender_dispenser.py           # Blender script — polls bridge + drives 3D animation
 ├── index.html
 ├── vite.config.js
+├── tailwind.config.js
 └── package.json
 ```
 
@@ -135,8 +147,8 @@ agastya/
 - **Node.js** 18 or later
 - **npm** 7 or later
 - An **Anthropic API key** — get one at [console.anthropic.com](https://console.anthropic.com)
-- (Optional) Python 3.9+ with Flask if you want the proxy server
-- (Optional) A physical IoT pill dispenser running the companion firmware on `localhost:5000`
+- A **Firebase project** with Authentication enabled — [console.firebase.google.com](https://console.firebase.google.com)
+- (Optional) Python 3.9+ with Flask for the physical dispenser bridge
 
 ---
 
@@ -155,19 +167,38 @@ npm install
 
 ### 3. Set up environment variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Then fill in your values:
 
 ```env
-# Required — Anthropic API key
+# ── Anthropic (required) ───────────────────────────────────────────────
 VITE_ANTHROPIC_API_KEY=sk-ant-...
 
-# Optional — EmailJS credentials for caregiver alerts
+# ── Firebase (required) ────────────────────────────────────────────────
+VITE_FIREBASE_API_KEY=AIza...
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+
+# ── EmailJS (optional — for caregiver alerts) ──────────────────────────
 VITE_EMAILJS_SERVICE_ID=your_service_id
 VITE_EMAILJS_TEMPLATE_ID=your_template_id
 VITE_EMAILJS_PUBLIC_KEY=your_public_key
 ```
 
-> **Never commit your `.env` file.** Add it to `.gitignore`.
+> **Never commit your `.env` file.** It is already listed in `.gitignore`.
+
+#### Firebase setup
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) and create a project.
+2. Under **Authentication → Sign-in method**, enable **Email/Password**.
+3. Under **Project Settings → Your apps**, add a Web app and copy the config values into your `.env`.
 
 ### 4. Start the development server
 
@@ -179,18 +210,26 @@ The app opens at **http://localhost:5173**.
 
 ---
 
-### Optional: Run the Flask proxy server
+### Optional: Run the Dispenser Bridge (physical hardware)
 
-If you want to route Claude API calls through a backend proxy instead of directly from the browser:
+The bridge server coordinates between the React web app and the Blender 3D dispenser animation.
 
 ```bash
-pip install flask flask-cors requests
-python proxy_server.py
+cd dispenser-bridge
+pip install flask flask-cors
+python server.py
 ```
 
-The proxy runs at `http://localhost:5001` and forwards requests to the Anthropic API.
+The bridge runs at `http://localhost:5000`. Endpoints:
 
-> **Note:** Before using the proxy server in any shared or deployed environment, move the API key out of `proxy_server.py` and into an environment variable.
+| Endpoint | Method | Description |
+|---|---|---|
+| `/dispense` | POST | Trigger a dispense (called by React) |
+| `/pending` | GET | Poll for next command (called by Blender) |
+| `/status` | GET | Poll animation status (called by React) |
+| `/status` | POST | Update animation status (called by Blender) |
+| `/health` | GET | Health check |
+| `/log` | GET | Full dispense history |
 
 ---
 
@@ -207,7 +246,7 @@ systemctl --user enable --now speech-dispatcher
 sudo apt install espeak-ng speech-dispatcher
 ```
 
-Restart your browser after installing. You can run `diagnoseVoices()` in the browser console (imported from `src/utils/voiceEngine.js`) to see which voices are detected.
+Restart your browser after installing. Run `diagnoseVoices()` in the browser console (from `src/utils/voiceEngine.js`) to check detected voices.
 
 ---
 
@@ -251,10 +290,11 @@ Output goes to `dist/`. Deploy to any static host — Netlify, Vercel, Nginx, et
 - [ ] Physical dispenser firmware — Arduino / Raspberry Pi companion code
 - [ ] Doctor portal — prescription verification and digital signing
 - [ ] Refill reminders + nearby pharmacy locator
-- [ ] Biometric / OTP authentication for sensitive health data
 
 ---
 
 ## About
 
 **Agastya** (आगस्त्य) is a revered sage in Indian tradition — a symbol of knowledge, care, and healing across generations. This project was built to help elderly Indian patients who manage multiple medications, often without a caregiver always present, and who may not read English.
+
+Built in 24 hours at **ScarlettHacks** hackathon by **ACM IIT**.

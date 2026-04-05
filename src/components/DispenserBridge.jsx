@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import emailjs from '@emailjs/browser'
 import { PillIcon } from './Icons.jsx'
+import { auth } from '../utils/firebase.js'
 
 // ── Countdown config ────────────────────────────────────────────────────────
 const COUNT_CFG = {
@@ -101,7 +102,7 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
           dosage:          dose,
           dispensed_time:  new Date().toLocaleString(),
           tray:            result?.tray || trayName,
-          patient_name:    patientName || 'Patient',
+          patient_name:    patientName || auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Patient',
           status:          result?.tray ? 'Successfully Dispensed' : 'Dispenser Offline — Manual Required',
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY

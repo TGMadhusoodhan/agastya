@@ -11,6 +11,8 @@ import {
 } from './utils/prescriptionDB.js'
 
 import LanguageContext       from './contexts/LanguageContext.jsx'
+import { useAuth }           from './contexts/AuthContext.jsx'
+import AuthPage              from './components/AuthPage.jsx'
 import Navbar                from './components/Navbar.jsx'
 import Dashboard             from './components/Dashboard.jsx'
 import Scanner               from './components/Scanner.jsx'
@@ -78,6 +80,8 @@ async function seedIfEmpty() {
 
 // ════════════════════════════════════════════════════════════════════════
 export default function App() {
+  const authUser = useAuth()   // undefined=loading, null=guest, object=logged in
+
   const [activeTab,             setActiveTab]             = useState('home')
   const [patient,               setPatient]               = useState(defaultPatient)
   const [activeMedications,     setActiveMedications]     = useState([])
@@ -88,6 +92,13 @@ export default function App() {
   const [toasts,                setToasts]                = useState([])
   const [initialized,           setInitialized]           = useState(false)
   const toastCounter = useRef(0)
+
+  // Keep patient.name in sync with Firebase displayName
+  useEffect(() => {
+    if (!authUser) return
+    const displayName = authUser.displayName || authUser.email?.split('@')[0] || 'User'
+    setPatient(prev => ({ ...prev, name: displayName }))
+  }, [authUser?.displayName, authUser?.email])
 
   const addToast = useCallback((message, type = 'info', duration = 4000) => {
     const id = ++toastCounter.current
@@ -260,7 +271,35 @@ export default function App() {
     }
   }
 
-  // ── Loading screen ────────────────────────────────────────────────────
+  // ── Auth loading (Firebase resolving) ────────────────────────────────
+  if (authUser === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#060C10' }}>
+        <div className="text-center">
+          <div
+            className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl font-black mx-auto mb-6"
+            style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.25)', boxShadow: '0 0 40px rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)' }}
+          >
+            <span style={{ color: '#00E87B', textShadow: '0 0 20px rgba(0,232,123,0.6)' }}>आ</span>
+          </div>
+          <div className="flex justify-center gap-2 mb-5">
+            <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+            <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#00C864', boxShadow: '0 0 8px #00C864' }} />
+            <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+          </div>
+          <h1 className="text-2xl font-black" style={{ color: '#00E87B', textShadow: '0 0 16px rgba(0,232,123,0.35)' }}>Agastya</h1>
+          <p className="text-sm mt-1" style={{ color: '#3D5E52' }}>Knowledge · Care · Intelligence</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Not logged in — show auth page ────────────────────────────────────
+  if (authUser === null) {
+    return <AuthPage />
+  }
+
+  // ── App loading (DB seeding) ──────────────────────────────────────────
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#060C10' }}>
