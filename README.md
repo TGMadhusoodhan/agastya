@@ -2,26 +2,67 @@
 
 > **Knowledge · Care · Intelligence**
 
-Agastya is a full-stack AI-powered medication management system built for Indian households. It combines a React web app, a physical smart dispenser (simulated in Blender 3D), and Claude AI to help elderly patients manage medications safely — with multilingual support, prescription scanning, caregiver alerts, and automated dispenser control.
+Agastya is an AI-powered medication management web app built for Indian households. It uses Claude AI vision to scan pill bottle labels and handwritten clinic prescriptions, manages a daily medication schedule, integrates with a physical smart dispenser, and supports multilingual voice output — making medication management accessible to elderly patients across language barriers.
+
+Built at a hackathon — April 2025.
 
 ---
 
 ## Features
 
-| Feature | Description |
-|---|---|
-| **Pill Bottle Scanner** | Camera scans any medication bottle — Claude AI reads the label, checks drug interactions, and assigns it to the correct dispenser compartment |
-| **Prescription Scanner** | Scans handwritten Indian clinic prescriptions (Kannada, Hindi, Tamil + English) — Claude extracts medications, dosages, frequency codes (OD/BD/TDS) and sets expiry dates |
-| **Smart Dispenser Control** | Click Dispense → 3…2…1 countdown → Blender 3D animation plays → confirmation email sent automatically |
-| **Multilingual UI** | Full interface in English, Hindi, Tamil, Kannada — medication instructions translated by Claude |
-| **Pharmacy Voice Mode** | Full-screen mode the patient shows to the pharmacist — speaks medication name aloud in Tamil/Spanish |
-| **Caregiver Alerts** | AI-generated alert messages emailed to caregiver via EmailJS |
-| **Medication Schedule** | Morning / Afternoon / Night slots with take/skip tracking and live adherence percentage |
-| **Prescription Library** | All scanned prescriptions stored in IndexedDB — searchable by date, disease, or doctor |
-| **Auto-Expiry** | Medications from timed prescriptions auto-remove from dispenser when the course ends |
-| **Vitals Panel** | Live heart rate, SpO2, stress, and sleep monitoring with sparkline trends |
-| **Adherence History** | Full history table with CSV export |
-| **Patient Profile** | Editable name, age, language, conditions, and caregiver contact |
+### Medication Scanner
+- Point the camera at any **pill bottle label** — Claude AI reads it and extracts the drug name, dosage, frequency, slot, and side effects
+- Automatically checks for **drug interactions** with the patient's existing medications, rated by severity (high / medium / low)
+- Generates simplified instructions in the **patient's preferred language**
+- Supports live camera capture or file upload (JPG, PNG, HEIC)
+
+### Prescription Scanner
+- Scans **handwritten Indian clinic prescriptions**, including mixed regional scripts — Kannada, Hindi, Tamil, and English
+- Understands Indian prescription shorthand: `OD`, `BD`, `TDS`, `QID`, `HS`, `SOS`
+- Extracts clinic name, doctor name, patient details, diagnosis, visit vitals, and all medications with dosages and durations
+- Auto-calculates **course expiry dates** from duration codes (e.g. "x10 days", "5D", "1/52")
+- Lets you **review and correct** the AI extraction before saving
+
+### Prescription Library
+- All scanned prescriptions stored locally in **IndexedDB** — no server required
+- Browse prescriptions by date, diagnosis, or doctor
+- Full detail view per prescription including all medications
+
+### Medication Schedule
+- Daily schedule split into **Morning / Afternoon / Night** slots
+- Mark medications as taken with one tap — live adherence tracking
+- Shows days remaining for time-limited courses
+- Medications auto-expire and are removed from the schedule when their course ends
+
+### Smart Dispenser Integration
+- Sends dispense commands to a physical **IoT pill dispenser** over local HTTP (`localhost:5000`)
+- Each medication is assigned a compartment number (morning = 1, afternoon = 2, night = 3)
+- Countdown animation before dispensing
+- Gracefully falls back when the dispenser is offline
+
+### Health Vitals Dashboard
+- Displays heart rate, SpO₂, stress score, and sleep quality
+- Designed to connect to **Samsung Health via Health Connect**
+- Animated health score ring calculated from adherence + vitals status
+- Contextual health insights based on the patient's medication and vitals
+
+### Adherence History
+- 30-day adherence log showing taken on time / taken late / missed
+- Summary statistics and visual bar breakdown
+
+### Caregiver Alerts
+- AI-generated alert messages composed by Claude for a natural, personalised tone
+- Sent via **EmailJS** to a registered caregiver email
+
+### Multilingual UI + Voice
+- Full UI available in: **English, Hindi, Tamil, Kannada, Spanish**
+- Claude AI transliterates medication and patient names into the patient's script
+- **Pharmacy Voice Mode** — full-screen mode to show pharmacists, with voice readout of medication name and instructions in the patient's language
+- Uses the **Web Speech API** with smart voice selection (prefers Google Cloud voices; falls back to espeak)
+
+### Patient Profile
+- Editable name, age, language, medical conditions, and caregiver contact
+- Profile drives AI personalisation across all scans and translations
 
 ---
 
@@ -29,13 +70,14 @@ Agastya is a full-stack AI-powered medication management system built for Indian
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| AI | Claude API (`claude-opus-4-5`) — vision + text |
-| Database | IndexedDB via `idb` (localStorage fallback) |
-| Email | EmailJS — caregiver alerts + dispenser confirmation |
-| Voice | Web Speech API (`speechSynthesis`) |
-| Dispenser Bridge | Flask (Python) — HTTP bridge server |
-| 3D Simulation | Blender + Python polling script |
+| Frontend | React 18 + Vite 5 |
+| Styling | Tailwind CSS 3 + custom CSS variables |
+| AI / Vision | Claude API (`claude-opus-4-5`) — vision + text |
+| Local Storage | IndexedDB via `idb` |
+| Email Alerts | EmailJS |
+| Voice Output | Web Speech API (`speechSynthesis`) |
+| Proxy Server | Flask + Flask-CORS (Python) — optional |
+| Hardware | IoT pill dispenser over HTTP (optional) |
 
 ---
 
@@ -44,187 +86,175 @@ Agastya is a full-stack AI-powered medication management system built for Indian
 ```
 agastya/
 ├── src/
-│   ├── App.jsx                        # Root — tab routing, state, toasts
+│   ├── App.jsx                        # Root — tab routing, global state, toast system
 │   ├── components/
-│   │   ├── Dashboard.jsx              # Home — health score, metrics, quick actions
+│   │   ├── Dashboard.jsx              # Home — health score ring, metric cards, quick actions
 │   │   ├── Scanner.jsx                # Pill bottle camera/upload scanner
-│   │   ├── MedAnalysis.jsx            # AI analysis results + actions
-│   │   ├── PrescriptionScanner.jsx    # Handwritten prescription scanner
-│   │   ├── PrescriptionLibrary.jsx    # All saved prescriptions
-│   │   ├── PrescriptionDetail.jsx     # Single prescription view + dispense
-│   │   ├── Schedule.jsx               # Daily medication schedule
-│   │   ├── DispenserBridge.jsx        # Dispenser UI — countdown + polling + email
-│   │   ├── DispenserSettings.jsx      # Add/remove/pause dispenser medications
-│   │   ├── VitalsPanel.jsx            # Live vitals with sparklines
-│   │   ├── AdherenceHistory.jsx       # History table + CSV export
-│   │   ├── PatientProfile.jsx         # Edit patient info + caregiver
-│   │   ├── CaregiverAlert.jsx         # AI-generated caregiver alert emails
+│   │   ├── MedAnalysis.jsx            # AI scan results — interactions, instructions, actions
+│   │   ├── PrescriptionScanner.jsx    # Handwritten prescription scanner + review card
+│   │   ├── PrescriptionLibrary.jsx    # All saved prescriptions list
+│   │   ├── PrescriptionDetail.jsx     # Single prescription detail view
+│   │   ├── Schedule.jsx               # Daily medication schedule by slot
+│   │   ├── DispenserBridge.jsx        # Dispenser UI — countdown + polling
+│   │   ├── DispenserSettings.jsx      # Manually add/remove/pause medications
+│   │   ├── VitalsPanel.jsx            # Live vitals with sync
+│   │   ├── AdherenceHistory.jsx       # Adherence history table
+│   │   ├── PatientProfile.jsx         # Edit patient info + caregiver contact
+│   │   ├── CaregiverAlert.jsx         # AI-generated caregiver email UI
 │   │   ├── PharmacyVoice.jsx          # Full-screen pharmacy voice mode
-│   │   ├── VoiceOutput.jsx            # Read instructions aloud
-│   │   ├── Navbar.jsx                 # Responsive nav (desktop + mobile bottom bar)
-│   │   └── Icons.jsx                  # SVG icon set
+│   │   ├── VoiceOutput.jsx            # Voice readout component
+│   │   ├── Navbar.jsx                 # Responsive bottom nav bar
+│   │   └── Icons.jsx                  # All SVG icon components
 │   ├── utils/
-│   │   ├── claudeApi.js               # All Claude API calls (analyze, translate, alert)
+│   │   ├── claudeApi.js               # All Claude API calls — scan, prescribe, translate, alert
 │   │   ├── prescriptionDB.js          # IndexedDB CRUD + auto-expiry logic
-│   │   ├── dispenser.js               # Flask dispenser HTTP client
+│   │   ├── dispenser.js               # IoT dispenser HTTP client
 │   │   ├── emailAlert.js              # EmailJS caregiver alert sender
-│   │   ├── voiceEngine.js             # Web Speech API wrapper (Linux/Chrome safe)
-│   │   ├── healthData.js              # Vitals simulation with variance
-│   │   └── i18n.js                    # Translations — English, Hindi, Tamil, Kannada
+│   │   ├── voiceEngine.js             # Web Speech API wrapper (Chrome/Linux safe)
+│   │   ├── healthData.js              # Vitals data + normal-range calculations
+│   │   └── i18n.js                    # UI string translations (EN, HI, TA, KN, ES)
 │   ├── contexts/
 │   │   └── LanguageContext.jsx        # Language provider + useT / useLang hooks
 │   └── data/
-│       ├── mockPatient.js             # Default patient — Rajesh Kumar, 68, Tamil
-│       ├── mockPrescriptions.js       # Sample prescriptions (fever + hypertension)
-│       ├── mockVitals.js              # Base vitals reference values
-│       └── mockHistory.js             # 30-day adherence history
-├── dispenser-bridge/
-│   ├── server.py                      # Flask bridge — /dispense, /pending, /status
-│   └── blender_dispenser.py          # Blender Python — polls Flask, plays animation
-├── .env.example                       # Template for environment variables
-└── README.md
-```
-
----
-
-## Setup
-
-### Prerequisites
-
-- Node.js 18+
-- Python 3.10+
-- Blender (optional — only needed for 3D animation)
-
-```bash
-# Python dependencies
-pip install flask flask-cors requests
-```
-
-### Environment Variables
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your keys:
-
-```env
-VITE_ANTHROPIC_API_KEY=          # Claude API key — console.anthropic.com
-VITE_EMAILJS_SERVICE_ID=         # EmailJS service ID
-VITE_EMAILJS_TEMPLATE_ID=        # Caregiver alert template ID
-VITE_EMAILJS_DISPENSER_TEMPLATE_ID=  # Dispenser confirmation template ID
-VITE_EMAILJS_PUBLIC_KEY=         # EmailJS public key
-```
-
-### Install Frontend
-
-```bash
-npm install
+│       ├── mockPatient.js             # Default patient seed data
+│       ├── mockPrescriptions.js       # Sample prescriptions for first-run seeding
+│       ├── mockVitals.js              # Mock vitals reference values
+│       └── mockHistory.js             # 30-day adherence history seed data
+├── proxy_server.py                    # Optional Flask proxy for the Claude API
+├── index.html
+├── vite.config.js
+└── package.json
 ```
 
 ---
 
 ## Running the Project
 
-Start these **in order**, each in a separate terminal:
+### Prerequisites
 
-### Step 1 — Flask Dispenser Bridge
+- **Node.js** 18 or later
+- **npm** 7 or later
+- An **Anthropic API key** — get one at [console.anthropic.com](https://console.anthropic.com)
+- (Optional) Python 3.9+ with Flask if you want the proxy server
+- (Optional) A physical IoT pill dispenser running the companion firmware on `localhost:5000`
+
+---
+
+### 1. Clone the repository
+
 ```bash
-cd dispenser-bridge
-python server.py
-```
-```
-Agastya Dispenser Bridge — http://localhost:5000
+git clone https://github.com/TGMadhusoodhan/agastya.git
+cd agastya
 ```
 
-### Step 2 — React App
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+
+Create a `.env` file in the project root:
+
+```env
+# Required — Anthropic API key
+VITE_ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional — EmailJS credentials for caregiver alerts
+VITE_EMAILJS_SERVICE_ID=your_service_id
+VITE_EMAILJS_TEMPLATE_ID=your_template_id
+VITE_EMAILJS_PUBLIC_KEY=your_public_key
+```
+
+> **Never commit your `.env` file.** Add it to `.gitignore`.
+
+### 4. Start the development server
+
 ```bash
 npm run dev
 ```
-Open **http://localhost:5173**
 
-### Step 3 — Blender 3D Dispenser (optional)
-```bash
-blender your_dispenser_file.blend
-```
-In Blender's **Text Editor**:
-1. Open `dispenser-bridge/blender_dispenser.py`
-2. Press **Alt+P** to run the script
-3. Check the terminal for:
-```
-[Agastya] Blender dispenser ready.
-[Agastya] Frame ranges:
-  Compartment 1 (Morning): frames 1–120
-  Compartment 2 (Afternoon): frames 1–120
-  Compartment 3 (Night): frames 1–120
-```
-
-> The app works fully without Blender. If the dispenser is offline, it falls back gracefully and still sends the confirmation email.
+The app opens at **http://localhost:5173**.
 
 ---
 
-## Dispenser Flow
+### Optional: Run the Flask proxy server
 
-```
-Click "Dispense Now"
-  → 3…2…1 countdown (DispenserBridge.jsx)
-  → POST /dispense → Flask queues command, sets status = "dispensing"
-  → Blender polls GET /pending → receives command → plays animation (frames 1–120)
-  → After 5s → Blender POST /status {"status":"complete"}
-  → React polls GET /status → sees "complete"
-  → EmailJS sends confirmation email
-  → Green checkmark UI → auto-resets after 5 seconds
-```
-
----
-
-## EmailJS Templates
-
-Two separate templates are required in your EmailJS dashboard:
-
-**Template 1 — Caregiver Alert** (`VITE_EMAILJS_TEMPLATE_ID`)
-
-```
-Subject: Agastya Alert — {{patient_name}}
-
-Variables used:
-  {{caregiver_name}}, {{patient_name}}, {{medication_name}},
-  {{alert_reason}}, {{message}}, {{timestamp}}
-```
-
-**Template 2 — Dispenser Confirmation** (`VITE_EMAILJS_DISPENSER_TEMPLATE_ID`)
-
-```
-Subject: Agastya — {{medication_name}} Dispensed
-
-Hi {{to_name}},
-
-Medication dispensed successfully.
-
-Patient:    {{patient_name}}
-Medication: {{medication_name}} {{dosage}}
-Tray:       {{tray}}
-Time:       {{dispensed_time}}
-Status:     {{status}}
-
-— Agastya AI
-```
-
----
-
-## Voice Output on Linux
-
-Requires a TTS engine:
+If you want to route Claude API calls through a backend proxy instead of directly from the browser:
 
 ```bash
-sudo pacman -S espeak-ng speech-dispatcher        # Arch Linux
+pip install flask flask-cors requests
+python proxy_server.py
+```
+
+The proxy runs at `http://localhost:5001` and forwards requests to the Anthropic API.
+
+> **Note:** Before using the proxy server in any shared or deployed environment, move the API key out of `proxy_server.py` and into an environment variable.
+
+---
+
+### Optional: Voice output on Linux
+
+Install a TTS engine so the Web Speech API has voices to use:
+
+```bash
+# Arch / Manjaro
+sudo pacman -S espeak-ng speech-dispatcher
 systemctl --user enable --now speech-dispatcher
+
+# Debian / Ubuntu
+sudo apt install espeak-ng speech-dispatcher
 ```
 
-Restart the browser after installing.
+Restart your browser after installing. You can run `diagnoseVoices()` in the browser console (imported from `src/utils/voiceEngine.js`) to see which voices are detected.
+
+---
+
+## Build for Production
+
+```bash
+npm run build
+```
+
+Output goes to `dist/`. Deploy to any static host — Netlify, Vercel, Nginx, etc.
+
+---
+
+## EmailJS Setup (for Caregiver Alerts)
+
+1. Create a free account at [emailjs.com](https://www.emailjs.com)
+2. Add an email service (Gmail, Outlook, etc.)
+3. Create a template with these variables:
+
+```
+{{caregiver_name}}   — caregiver's name
+{{patient_name}}     — patient's name
+{{patient_age}}      — patient's age
+{{medication_name}}  — medication that triggered the alert
+{{medication_dose}}  — dosage
+{{alert_reason}}     — reason for the alert
+{{message}}          — AI-generated message body
+{{timestamp}}        — when the alert was sent
+```
+
+4. Copy your Service ID, Template ID, and Public Key into `.env`
+
+---
+
+## What's Next
+
+- [ ] PWA support — install to home screen + offline mode
+- [ ] Browser push notifications for medication reminders
+- [ ] Cloud sync — replace IndexedDB with a real backend for multi-device use
+- [ ] Wearable integration — live data from Fitbit, Apple Watch, Galaxy Watch
+- [ ] Physical dispenser firmware — Arduino / Raspberry Pi companion code
+- [ ] Doctor portal — prescription verification and digital signing
+- [ ] Refill reminders + nearby pharmacy locator
+- [ ] Biometric / OTP authentication for sensitive health data
 
 ---
 
 ## About
 
-**Agastya** (आगस्त्य) is a revered sage in Indian tradition — a symbol of knowledge, care, and healing. This project was built to help elderly Indian patients manage multiple medications safely, with support for regional languages and caregivers who may not always be present.
+**Agastya** (आगस्त्य) is a revered sage in Indian tradition — a symbol of knowledge, care, and healing across generations. This project was built to help elderly Indian patients who manage multiple medications, often without a caregiver always present, and who may not read English.
