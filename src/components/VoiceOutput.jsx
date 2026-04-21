@@ -1,4 +1,4 @@
-// src/components/VoiceOutput.jsx — dark glass
+// src/components/VoiceOutput.jsx — light medical
 import { useState, useEffect } from 'react'
 import { speak, stopSpeaking, isSpeaking, isSpeechSupported, getAvailableVoices } from '../utils/voiceEngine.js'
 
@@ -33,21 +33,21 @@ export default function VoiceOutput({ text, translatedText, language = 'English'
   }
 
   if (!supported) return (
-    <div className="rounded-2xl p-4 text-sm" style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', color: 'var(--t2)' }}>
+    <div className="rounded-2xl p-4 text-sm" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#475569' }}>
       Voice output requires Chrome or Edge.
     </div>
   )
 
   if (noVoices) return (
-    <div className="rounded-2xl p-5 space-y-3" style={{ background: 'rgba(255,173,0,0.08)', border: '1px solid rgba(255,173,0,0.2)' }}>
+    <div className="rounded-2xl p-5 space-y-3" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
       <div className="flex items-start gap-3">
         <span className="text-2xl shrink-0">🔇</span>
         <div>
-          <p className="font-bold text-sm" style={{ color: '#FFAD00' }}>No TTS engine found</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--t2)' }}>Install espeak-ng to enable voice output:</p>
+          <p className="font-bold text-sm" style={{ color: '#D97706' }}>No TTS engine found</p>
+          <p className="text-xs mt-1" style={{ color: '#475569' }}>Install espeak-ng to enable voice output:</p>
         </div>
       </div>
-      <div className="rounded-xl px-4 py-3 font-mono text-xs space-y-1" style={{ background: 'rgba(0,0,0,0.3)', color: '#FFAD00' }}>
+      <div className="rounded-xl px-4 py-3 font-mono text-xs space-y-1" style={{ background: '#1E293B', color: '#94A3B8' }}>
         <div>sudo pacman -S espeak-ng speech-dispatcher</div>
         <div>systemctl --user enable --now speech-dispatcher</div>
       </div>
@@ -55,17 +55,17 @@ export default function VoiceOutput({ text, translatedText, language = 'English'
   )
 
   return (
-    <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)' }}>
+    <div className="rounded-2xl p-4 space-y-3" style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--t3)' }}>
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide" style={{ color: '#64748B' }}>
           Voice Output
-          {voicesReady && <span className="w-1.5 h-1.5 rounded-full inline-block bg-[#00E87B]" />}
+          {voicesReady && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#059669' }} />}
         </div>
         <select
           value={selectedLang}
           onChange={e => { setSelectedLang(e.target.value); stopSpeaking(); setSpeaking(false) }}
           className="text-xs rounded-xl px-2 py-1"
-          style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.15)', color: 'var(--t1)' }}
+          style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#0F172A' }}
         >
           {LANGUAGES.map(l => <option key={l}>{l}</option>)}
         </select>
@@ -77,8 +77,8 @@ export default function VoiceOutput({ text, translatedText, language = 'English'
           className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all"
           style={
             speaking
-              ? { background: 'rgba(255,77,106,0.12)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.25)' }
-              : { background: 'rgba(159,110,255,0.12)', color: '#9F6EFF', border: '1px solid rgba(159,110,255,0.25)' }
+              ? { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }
+              : { background: 'rgba(159,110,255,0.1)', color: '#9F6EFF', border: '1px solid rgba(159,110,255,0.25)' }
           }
         >
           {speaking ? (
@@ -96,7 +96,7 @@ export default function VoiceOutput({ text, translatedText, language = 'English'
         )}
       </div>
 
-      <p className="text-sm leading-relaxed p-3 rounded-2xl" style={{ background: 'rgba(0,232,123,0.04)', color: 'var(--t2)', border: '1px solid rgba(0,232,123,0.07)' }}>
+      <p className="text-sm leading-relaxed p-3 rounded-2xl" style={{ background: '#F8FAFC', color: '#334155', border: '1px solid #E2E8F0' }}>
         {selectedLang !== 'English' && translatedText ? translatedText : text}
       </p>
     </div>

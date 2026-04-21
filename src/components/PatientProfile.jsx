@@ -1,15 +1,16 @@
-// src/components/PatientProfile.jsx — dark glass
+// src/components/PatientProfile.jsx — light medical
 import { useState, useEffect } from 'react'
 import { EditIcon, CheckIcon, LogoutIcon } from './Icons.jsx'
 import { useT, useLang } from '../contexts/LanguageContext.jsx'
 import { translateNames } from '../utils/claudeApi.js'
 import { signOut, updateProfile } from 'firebase/auth'
 import { auth } from '../utils/firebase.js'
+import { saveUserProfile } from '../utils/userProfile.js'
 
 const inputStyle = {
-  background: 'rgba(10,22,34,0.7)',
-  border: '1px solid rgba(0,232,123,0.12)',
-  color: '#EDFAF3',
+  background: '#fff',
+  border: '1px solid #CBD5E1',
+  color: '#0F172A',
   borderRadius: '0.875rem',
   padding: '0.5rem 0.75rem',
   width: '100%',
@@ -17,8 +18,9 @@ const inputStyle = {
   outline: 'none',
 }
 
-export default function PatientProfile({ patient, onUpdate }) {
+export default function PatientProfile({ patient, onUpdate, addToast }) {
   const [isEditing,   setIsEditing]   = useState(false)
+  const [saving,      setSaving]      = useState(false)
   const [formData,    setFormData]    = useState(patient)
   const [translated,  setTranslated]  = useState({})
   const [loggingOut,  setLoggingOut]  = useState(false)
@@ -35,12 +37,32 @@ export default function PatientProfile({ patient, onUpdate }) {
   const tx = name => (name ? translated[name] || name : name)
 
   const handleSave = async () => {
-    // Sync name to Firebase if changed
-    if (auth.currentUser && formData.name && formData.name !== auth.currentUser.displayName) {
-      try { await updateProfile(auth.currentUser, { displayName: formData.name }) } catch {}
+    setSaving(true)
+    try {
+      if (auth.currentUser) {
+        if (formData.name && formData.name !== auth.currentUser.displayName) {
+          await updateProfile(auth.currentUser, { displayName: formData.name })
+        }
+        await saveUserProfile(auth.currentUser.uid, {
+          displayName: formData.name,
+          language: formData.language,
+        })
+      }
+      onUpdate(formData)
+      setIsEditing(false)
+      addToast?.('Profile saved', 'success')
+    } catch (err) {
+      console.error('PatientProfile save error:', err)
+      const msg = err?.code === 'permission-denied'
+        ? 'Firestore permission denied — check your Firebase security rules (allow read, write: if request.auth != null)'
+        : `Save failed: ${err?.message || err?.code || 'Unknown error'}`
+      addToast?.(msg, 'error', 8000)
+      // Still update local state so the UI reflects the change in this session
+      onUpdate(formData)
+      setIsEditing(false)
+    } finally {
+      setSaving(false)
     }
-    onUpdate(formData)
-    setIsEditing(false)
   }
 
   const handleLogout = async () => {
@@ -53,20 +75,23 @@ export default function PatientProfile({ patient, onUpdate }) {
       {/* Header */}
       <div
         className="relative rounded-2xl p-6 overflow-hidden"
-        style={{ background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,232,123,0.15)', backdropFilter: 'blur(20px)' }}
+        style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 6px 24px rgba(37,99,235,0.22)' }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,232,123,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,232,123,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--t1)' }}>{tp.title}</h2>
-            <p style={{ color: 'var(--t3)' }}>{tp.subtitle}</p>
+            <h2 className="text-2xl font-black mb-1" style={{ color: '#fff' }}>{tp.title}</h2>
+            <p style={{ color: 'rgba(255,255,255,0.7)' }}>{tp.subtitle}</p>
           </div>
           <button
             onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all flex items-center gap-1.5"
-            style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.25)' }}
+            disabled={saving}
+            className="px-4 py-2 rounded-2xl text-sm font-semibold transition-all flex items-center gap-1.5 disabled:opacity-60"
+            style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
           >
-            {isEditing
+            {saving
+              ? <><div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} /> Saving…</>
+              : isEditing
               ? <><CheckIcon className="w-4 h-4" /> {tp.save}</>
               : <><EditIcon  className="w-4 h-4" /> {tp.edit}</>
             }
@@ -76,18 +101,16 @@ export default function PatientProfile({ patient, onUpdate }) {
 
       {/* Profile card */}
       <div className="rounded-2xl p-6 space-y-5"
-        style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)' }}>
+        style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
 
         {/* Avatar + name */}
         <div className="flex items-center gap-6">
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black shrink-0"
             style={{
-              background: 'linear-gradient(135deg,rgba(10,22,34,0.9),rgba(6,12,16,0.95))',
-              border: '2px solid rgba(0,232,123,0.3)',
-              color: '#00E87B',
-              boxShadow: '0 0 20px rgba(0,232,123,0.12)',
-              textShadow: '0 0 12px rgba(0,232,123,0.5)',
+              background: 'linear-gradient(135deg, #1D56DB, #2563EB)',
+              color: '#fff',
+              boxShadow: '0 4px 16px rgba(37,99,235,0.25)',
             }}
           >
             {patient.name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -97,30 +120,31 @@ export default function PatientProfile({ patient, onUpdate }) {
               <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
                 style={{ ...inputStyle, marginBottom: '0.5rem', fontWeight: '700', fontSize: '1rem' }} />
             ) : (
-              <h3 className="text-xl font-bold mb-0.5" style={{ color: 'var(--t1)' }}>{tx(patient.name)}</h3>
+              <h3 className="text-xl font-bold mb-0.5" style={{ color: '#0F172A' }}>{tx(patient.name)}</h3>
             )}
             {isEditing ? (
               <input value={formData.age} onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) })}
                 type="number" style={{ ...inputStyle, width: '6rem' }} />
             ) : (
-              <p style={{ color: 'var(--t3)' }}>{tp.yearsOld(patient.age)}</p>
+              <p style={{ color: '#64748B' }}>{tp.yearsOld(patient.age)}</p>
             )}
           </div>
         </div>
 
         {/* Language */}
         <div>
-          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.language}</label>
+          <label className="block text-sm font-semibold mb-2" style={{ color: '#475569' }}>{tp.language}</label>
           {isEditing ? (
             <select value={formData.language} onChange={e => setFormData({ ...formData, language: e.target.value })} style={inputStyle}>
               <option>English</option>
               <option>Hindi</option>
               <option>Tamil</option>
               <option>Kannada</option>
+              <option>Spanish</option>
             </select>
           ) : (
             <div className="px-3 py-2 rounded-xl text-sm"
-              style={{ background: 'rgba(0,232,123,0.05)', color: 'var(--t1)', border: '1px solid rgba(0,232,123,0.1)' }}>
+              style={{ background: 'rgba(37,99,235,0.06)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.15)' }}>
               {patient.language}
             </div>
           )}
@@ -128,20 +152,20 @@ export default function PatientProfile({ patient, onUpdate }) {
 
         {/* Medical Conditions */}
         <div>
-          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.conditions}</label>
+          <label className="block text-sm font-semibold mb-2" style={{ color: '#475569' }}>{tp.conditions}</label>
           <div className="flex flex-wrap gap-2">
             {(isEditing ? formData.conditions : patient.conditions).map((cond, i) => (
               <span
                 key={i}
                 className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
-                style={{ background: 'rgba(0,200,255,0.1)', color: '#00C8FF', border: '1px solid rgba(0,200,255,0.2)' }}
+                style={{ background: 'rgba(8,145,178,0.08)', color: '#0891B2', border: '1px solid rgba(8,145,178,0.18)' }}
               >
                 {isEditing ? cond : tx(cond)}
                 {isEditing && (
                   <button
                     onClick={() => setFormData({ ...formData, conditions: formData.conditions.filter(c => c !== cond) })}
                     className="ml-1 hover:opacity-70 transition-opacity"
-                    style={{ color: '#00C8FF' }}
+                    style={{ color: '#0891B2' }}
                   >
                     ×
                   </button>
@@ -155,7 +179,7 @@ export default function PatientProfile({ patient, onUpdate }) {
                   if (newCond) setFormData({ ...formData, conditions: [...formData.conditions, newCond] })
                 }}
                 className="px-3 py-1 border-2 border-dashed rounded-full text-sm transition-all"
-                style={{ borderColor: 'rgba(0,232,123,0.2)', color: 'var(--t3)' }}
+                style={{ borderColor: '#CBD5E1', color: '#94A3B8' }}
               >
                 {tp.addCondition}
               </button>
@@ -165,7 +189,7 @@ export default function PatientProfile({ patient, onUpdate }) {
 
         {/* Caregiver */}
         <div>
-          <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--t2)' }}>{tp.emergency}</label>
+          <label className="block text-sm font-semibold mb-2" style={{ color: '#475569' }}>{tp.emergency}</label>
           {isEditing ? (
             <div className="space-y-2">
               <input
@@ -183,9 +207,9 @@ export default function PatientProfile({ patient, onUpdate }) {
               />
             </div>
           ) : (
-            <div className="p-3 rounded-2xl" style={{ background: 'rgba(0,232,123,0.05)', border: '1px solid rgba(0,232,123,0.1)' }}>
-              <p className="font-medium" style={{ color: 'var(--t1)' }}>{patient.caregiver?.name || tp.notSet}</p>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--t3)' }}>{patient.caregiver?.email || ''}</p>
+            <div className="p-3 rounded-2xl" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+              <p className="font-medium" style={{ color: '#0F172A' }}>{patient.caregiver?.name || tp.notSet}</p>
+              <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>{patient.caregiver?.email || ''}</p>
             </div>
           )}
         </div>
@@ -193,8 +217,8 @@ export default function PatientProfile({ patient, onUpdate }) {
         {/* Signed-in email */}
         {auth.currentUser?.email && (
           <div className="pt-1 pb-1">
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--t3)' }}>Signed in as</div>
-            <div className="text-sm font-medium" style={{ color: 'var(--t2)' }}>{auth.currentUser.email}</div>
+            <div className="text-xs font-semibold mb-1" style={{ color: '#94A3B8' }}>Signed in as</div>
+            <div className="text-sm font-medium" style={{ color: '#475569' }}>{auth.currentUser.email}</div>
           </div>
         )}
 
@@ -203,7 +227,7 @@ export default function PatientProfile({ patient, onUpdate }) {
           onClick={handleLogout}
           disabled={loggingOut}
           className="w-full py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
-          style={{ background: 'rgba(255,77,106,0.08)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.2)' }}
+          style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}
         >
           <LogoutIcon className="w-4 h-4" />
           {loggingOut ? 'Signing out…' : 'Sign Out'}

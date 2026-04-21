@@ -12,6 +12,7 @@ import {
 
 import LanguageContext       from './contexts/LanguageContext.jsx'
 import { useAuth }           from './contexts/AuthContext.jsx'
+import { loadUserProfile }   from './utils/userProfile.js'
 import AuthPage              from './components/AuthPage.jsx'
 import Navbar                from './components/Navbar.jsx'
 import Dashboard             from './components/Dashboard.jsx'
@@ -28,10 +29,10 @@ import DispenserSettings     from './components/DispenserSettings.jsx'
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 const TOAST_COLORS = {
-  success: { bg: 'rgba(0,232,123,0.12)',  border: 'rgba(0,232,123,0.28)',  text: '#00E87B' },
-  error:   { bg: 'rgba(255,77,106,0.12)', border: 'rgba(255,77,106,0.3)',  text: '#FF4D6A' },
-  warning: { bg: 'rgba(255,173,0,0.12)',  border: 'rgba(255,173,0,0.28)',  text: '#FFAD00' },
-  info:    { bg: 'rgba(0,200,255,0.12)',  border: 'rgba(0,200,255,0.28)',  text: '#00C8FF' },
+  success: { bg: '#F0FDF4', border: '#BBF7D0', text: '#059669' },
+  error:   { bg: '#FEF2F2', border: '#FECACA', text: '#DC2626' },
+  warning: { bg: '#FFFBEB', border: '#FDE68A', text: '#D97706' },
+  info:    { bg: '#F0F9FF', border: '#BAE6FD', text: '#0891B2' },
 }
 
 function ToastBar({ toasts, onRemove }) {
@@ -46,12 +47,11 @@ function ToastBar({ toasts, onRemove }) {
             style={{
               background: s.bg,
               border: `1px solid ${s.border}`,
-              backdropFilter: 'blur(20px)',
-              boxShadow: `0 8px 32px rgba(0,0,0,0.4)`,
+              boxShadow: '0 4px 16px rgba(15,23,42,0.1)',
             }}
           >
             <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: s.text, boxShadow: `0 0 6px ${s.text}` }} />
-            <span className="text-sm font-medium flex-1" style={{ color: '#EDFAF3' }}>{t.message}</span>
+            <span className="text-sm font-medium flex-1" style={{ color: s.text }}>{t.message}</span>
             <button onClick={() => onRemove(t.id)} className="shrink-0 text-lg leading-none opacity-40 hover:opacity-80" style={{ color: s.text }}>×</button>
           </div>
         )
@@ -93,14 +93,21 @@ export default function App() {
   const [initialized,           setInitialized]           = useState(false)
   const toastCounter = useRef(0)
 
-  // Keep patient.name in sync with Firebase displayName
+  // Keep patient.name in sync with Firebase displayName; load language from Firestore
   useEffect(() => {
     if (!authUser) return
     const displayName = authUser.displayName || authUser.email?.split('@')[0] || 'User'
     setPatient(prev => ({ ...prev, name: displayName }))
-  }, [authUser?.displayName, authUser?.email])
+    loadUserProfile(authUser.uid)
+      .then(profile => {
+        if (profile?.language) {
+          setPatient(prev => ({ ...prev, language: profile.language }))
+        }
+      })
+      .catch(() => {})
+  }, [authUser?.uid])
 
-  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+  const addToast = useCallback((message, type = 'info', duration = type === 'error' ? 6000 : 4000) => {
     const id = ++toastCounter.current
     setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration)
@@ -189,6 +196,7 @@ export default function App() {
 
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     if (tab !== 'prescriptions') { setPrescriptionSubView('library'); setSelectedPrescription(null) }
     if (tab !== 'scan') setScanResult(null)
   }, [])
@@ -255,7 +263,7 @@ export default function App() {
         return <AdherenceHistory patient={patient} />
 
       case 'profile':
-        return <PatientProfile patient={patient} onUpdate={handlePatientUpdate} />
+        return <PatientProfile patient={patient} onUpdate={handlePatientUpdate} addToast={addToast} />
 
       case 'settings':
         return (
@@ -274,21 +282,21 @@ export default function App() {
   // ── Auth loading (Firebase resolving) ────────────────────────────────
   if (authUser === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#060C10' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #EFF3FB, #E3EBF8)' }}>
         <div className="text-center">
           <div
             className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl font-black mx-auto mb-6"
-            style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.25)', boxShadow: '0 0 40px rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 8px 32px rgba(37,99,235,0.28)' }}
           >
-            <span style={{ color: '#00E87B', textShadow: '0 0 20px rgba(0,232,123,0.6)' }}>आ</span>
+            <span style={{ color: '#fff' }}>आ</span>
           </div>
           <div className="flex justify-center gap-2 mb-5">
-            <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
-            <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#00C864', boxShadow: '0 0 8px #00C864' }} />
-            <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+            <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#2563EB' }} />
+            <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#3B82F6' }} />
+            <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#2563EB' }} />
           </div>
-          <h1 className="text-2xl font-black" style={{ color: '#00E87B', textShadow: '0 0 16px rgba(0,232,123,0.35)' }}>Agastya</h1>
-          <p className="text-sm mt-1" style={{ color: '#3D5E52' }}>Knowledge · Care · Intelligence</p>
+          <h1 className="text-2xl font-black" style={{ color: '#0F172A' }}>Agastya</h1>
+          <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Knowledge · Care · Intelligence</p>
         </div>
       </div>
     )
@@ -302,21 +310,21 @@ export default function App() {
   // ── App loading (DB seeding) ──────────────────────────────────────────
   if (!initialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#060C10' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #EFF3FB, #E3EBF8)' }}>
         <div className="text-center">
           <div
             className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl font-black mx-auto mb-6"
-            style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.25)', boxShadow: '0 0 40px rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 8px 32px rgba(37,99,235,0.28)' }}
           >
-            <span style={{ color: '#00E87B', textShadow: '0 0 20px rgba(0,232,123,0.6)' }}>आ</span>
+            <span style={{ color: '#fff' }}>आ</span>
           </div>
           <div className="flex justify-center gap-2 mb-5">
-            <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
-            <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#00C864', boxShadow: '0 0 8px #00C864' }} />
-            <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#00E87B', boxShadow: '0 0 8px #00E87B' }} />
+            <div className="w-3 h-3 rounded-full dot-1" style={{ background: '#2563EB' }} />
+            <div className="w-3 h-3 rounded-full dot-2" style={{ background: '#3B82F6' }} />
+            <div className="w-3 h-3 rounded-full dot-3" style={{ background: '#2563EB' }} />
           </div>
-          <h1 className="text-2xl font-black" style={{ color: '#00E87B', textShadow: '0 0 16px rgba(0,232,123,0.35)' }}>Agastya</h1>
-          <p className="text-sm mt-1" style={{ color: '#3D5E52' }}>Knowledge · Care · Intelligence</p>
+          <h1 className="text-2xl font-black" style={{ color: '#0F172A' }}>Agastya</h1>
+          <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Knowledge · Care · Intelligence</p>
         </div>
       </div>
     )
@@ -325,11 +333,13 @@ export default function App() {
   // ── Main app ──────────────────────────────────────────────────────────
   return (
     <LanguageContext.Provider value={patient.language || 'English'}>
-      <div className="min-h-screen" style={{ background: '#060C10' }}>
+      <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
         <ToastBar toasts={toasts} onRemove={removeToast} />
         <Navbar activeTab={activeTab} onTabChange={handleTabChange} />
         <main className="max-w-5xl mx-auto px-4 pt-20 pb-24 md:pb-8">
-          {renderContent()}
+          <div key={activeTab} className="fade-up">
+            {renderContent()}
+          </div>
         </main>
       </div>
     </LanguageContext.Provider>

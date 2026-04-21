@@ -1,10 +1,16 @@
-// src/components/VitalsPanel.jsx — dark glass
+// src/components/VitalsPanel.jsx
 import { useState } from 'react'
 import { getVitals, getVitalsStatus, getVitalsColor } from '../utils/healthData.js'
 import { HeartIcon, DropletIcon, BrainIcon, MoonIcon, RefreshIcon, LightbulbIcon, PillIcon, CheckCircleIcon, AlertIcon } from './Icons.jsx'
 import { useT } from '../contexts/LanguageContext.jsx'
 
-function Sparkline({ data, color = '#00E87B', width = 80, height = 30 }) {
+const CARD = {
+  background: '#fff',
+  border: '1px solid #E2E8F0',
+  boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04)',
+}
+
+function Sparkline({ data, color = '#059669', width = 80, height = 30 }) {
   if (!data || data.length < 2) return null
   const min   = Math.min(...data)
   const max   = Math.max(...data)
@@ -19,55 +25,52 @@ function Sparkline({ data, color = '#00E87B', width = 80, height = 30 }) {
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.8"
-        style={{ filter: `drop-shadow(0 0 3px ${color}80)` }}
+        opacity="0.9"
       />
     </svg>
   )
 }
 
-function VitalCard({ Icon, label, value, unit, trend, normal, statusColor, sparkColor, bgBorder, tv }) {
-  const isGood  = statusColor.includes('emerald') || statusColor.includes('green')
-  const isHigh  = statusColor.includes('red')
-  const accentColor = isHigh ? '#FF4D6A' : isGood ? sparkColor : '#FFAD00'
+function VitalCard({ Icon, label, value, unit, trend, normal, statusColor, sparkColor, accentColor, tv }) {
+  const isGood = statusColor.includes('emerald') || statusColor.includes('green')
+  const isHigh = statusColor.includes('red')
+  const color  = isHigh ? '#DC2626' : isGood ? accentColor : '#D97706'
+  const statusBg     = isHigh ? 'rgba(220,38,38,0.08)'  : isGood ? `${accentColor}10` : 'rgba(217,119,6,0.08)'
+  const statusBorder = isHigh ? 'rgba(220,38,38,0.2)'   : isGood ? `${accentColor}25` : 'rgba(217,119,6,0.2)'
+  const statusLabel  = isHigh ? tv.high : isGood ? tv.normal : tv.low
+  const StatusIcon   = isGood ? CheckCircleIcon : AlertIcon
 
   return (
-    <div
-      className="rounded-2xl p-5 transition-all"
-      style={{ background: 'rgba(10,22,34,0.8)', border: `1px solid ${bgBorder}`, backdropFilter: 'blur(20px)' }}
-    >
+    <div className="rounded-2xl p-5 transition-all hover:-translate-y-0.5" style={CARD}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5" style={{ color: accentColor }} />
-          <span className="font-semibold text-sm" style={{ color: 'var(--t2)' }}>{label}</span>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}10` }}>
+            <Icon className="w-5 h-5" style={{ color }} />
+          </div>
+          <span className="font-semibold text-sm" style={{ color: '#334155' }}>{label}</span>
         </div>
         <span
           className="text-xs font-bold flex items-center gap-1 px-2 py-0.5 rounded-full"
-          style={{ background: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}30` }}
+          style={{ background: statusBg, color, border: `1px solid ${statusBorder}` }}
         >
-          {isGood
-            ? <><CheckCircleIcon className="w-3 h-3" /> {tv.normal}</>
-            : isHigh
-            ? <><AlertIcon className="w-3 h-3" /> {tv.high}</>
-            : <><AlertIcon className="w-3 h-3" /> {tv.low}</>
-          }
+          <StatusIcon className="w-3 h-3" /> {statusLabel}
         </span>
       </div>
 
       <div className="flex items-end justify-between">
         <div>
-          <span className="text-3xl font-black" style={{ color: accentColor, textShadow: `0 0 12px ${accentColor}50` }}>
+          <span className="text-3xl font-black" style={{ color }}>
             {value}
           </span>
-          <span className="text-sm ml-1" style={{ color: 'var(--t3)' }}>{unit}</span>
+          <span className="text-sm ml-1" style={{ color: '#94A3B8' }}>{unit}</span>
         </div>
-        <Sparkline data={trend} color={accentColor} />
+        <Sparkline data={trend} color={color} />
       </div>
 
-      <p className="text-xs mt-2" style={{ color: 'var(--t4)' }}>
+      <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>
         {tv.normalRange} {Array.isArray(normal) ? `${normal[0]}–${normal[1]}` : normal}
       </p>
     </div>
@@ -99,33 +102,25 @@ export default function VitalsPanel({ patient }) {
       Icon: HeartIcon,   label: tv.heartRate,
       value: vitals.heartRate.value, unit: vitals.heartRate.unit,
       trend: vitals.heartRate.trend, normal: vitals.heartRate.normal,
-      statusColor: getVitalsColor(hrStatus),
-      bgBorder: hrStatus === 'normal' ? 'rgba(255,77,106,0.15)' : 'rgba(255,77,106,0.35)',
-      sparkColor: '#FF4D6A',
+      statusColor: getVitalsColor(hrStatus), accentColor: '#DC2626', sparkColor: '#DC2626',
     },
     {
       Icon: DropletIcon, label: tv.bloodOxygen,
       value: vitals.spO2.value, unit: vitals.spO2.unit,
       trend: vitals.spO2.trend, normal: vitals.spO2.normal,
-      statusColor: getVitalsColor(spo2Status),
-      bgBorder: spo2Status === 'normal' ? 'rgba(0,200,255,0.15)' : 'rgba(255,77,106,0.35)',
-      sparkColor: '#00C8FF',
+      statusColor: getVitalsColor(spo2Status), accentColor: '#0891B2', sparkColor: '#0891B2',
     },
     {
       Icon: BrainIcon,   label: tv.stress,
       value: vitals.stress.value, unit: vitals.stress.unit,
       trend: vitals.stress.trend, normal: vitals.stress.normal,
-      statusColor: getVitalsColor(stressStatus),
-      bgBorder: stressStatus === 'normal' ? 'rgba(159,110,255,0.15)' : 'rgba(255,173,0,0.25)',
-      sparkColor: '#9F6EFF',
+      statusColor: getVitalsColor(stressStatus), accentColor: '#7C3AED', sparkColor: '#7C3AED',
     },
     {
       Icon: MoonIcon,    label: tv.sleep,
       value: vitals.sleep.value, unit: vitals.sleep.unit,
       trend: vitals.sleep.trend, normal: vitals.sleep.normal,
-      statusColor: getVitalsColor(sleepStatus),
-      bgBorder: sleepStatus === 'normal' ? 'rgba(99,102,241,0.15)' : 'rgba(255,173,0,0.25)',
-      sparkColor: '#6366F1',
+      statusColor: getVitalsColor(sleepStatus), accentColor: '#6366F1', sparkColor: '#6366F1',
     },
   ]
 
@@ -140,34 +135,28 @@ export default function VitalsPanel({ patient }) {
     <div className="space-y-5">
       {/* Header */}
       <div
-        className="relative rounded-2xl p-6 overflow-hidden"
-        style={{ background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,200,255,0.18)', backdropFilter: 'blur(20px)' }}
+        className="rounded-2xl p-6 flex items-center justify-between"
+        style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 6px 24px rgba(37,99,235,0.22)' }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--t1)' }}>{tv.title}</h2>
-            <p className="text-sm" style={{ color: 'var(--t3)' }}>{tv.liveMonitoring}</p>
+        <div>
+          <h2 className="text-2xl font-black mb-1" style={{ color: '#fff' }}>{tv.title}</h2>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full pulse-live" style={{ background: '#6EE7B7' }} />
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>{tv.liveMonitoring}</p>
           </div>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all disabled:opacity-50"
-            style={{ background: 'rgba(0,200,255,0.1)', color: '#00C8FF', border: '1px solid rgba(0,200,255,0.25)' }}
-          >
-            <RefreshIcon className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? tv.syncing : tv.sync}
-          </button>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            {tv.lastSynced} {lastSync.toLocaleTimeString()}
+          </p>
         </div>
-
-        <div className="relative z-10 mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{ background: 'rgba(0,232,123,0.06)', border: '1px solid rgba(0,232,123,0.12)' }}>
-          <div className="w-2 h-2 rounded-full pulse-live" style={{ background: '#00E87B' }} />
-          <span className="text-xs font-semibold" style={{ color: '#00E87B' }}>{tv.connected}</span>
-        </div>
-        <div className="relative z-10 mt-1 ml-7 text-xs" style={{ color: 'var(--t4)' }}>
-          {tv.lastSynced} {lastSync.toLocaleTimeString()}
-        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+          style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          <RefreshIcon className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? tv.syncing : tv.sync}
+        </button>
       </div>
 
       {/* Vitals grid */}
@@ -176,23 +165,29 @@ export default function VitalsPanel({ patient }) {
       </div>
 
       {/* AI Insight */}
-      <div className="rounded-2xl p-5 flex gap-3" style={{ background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.15)' }}>
-        <LightbulbIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#00C8FF' }} />
+      <div className="rounded-2xl p-5 flex gap-3"
+        style={{ background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(8,145,178,0.1)' }}>
+          <LightbulbIcon className="w-5 h-5" style={{ color: '#0891B2' }} />
+        </div>
         <div>
-          <h3 className="font-bold text-sm mb-1" style={{ color: '#00C8FF' }}>{tv.insight}</h3>
+          <h3 className="font-bold text-sm mb-1" style={{ color: '#0891B2' }}>{tv.insight}</h3>
           {tips.map((tip, i) => (
-            <p key={i} className="text-sm" style={{ color: 'var(--t2)' }}>{tip}</p>
+            <p key={i} className="text-sm" style={{ color: '#334155' }}>{tip}</p>
           ))}
         </div>
       </div>
 
       {/* High HR medication note */}
       {hrStatus === 'high' && (
-        <div className="rounded-2xl p-4 flex gap-3" style={{ background: 'rgba(255,173,0,0.07)', border: '1px solid rgba(255,173,0,0.2)' }}>
-          <PillIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#FFAD00' }} />
+        <div className="rounded-2xl p-4 flex gap-3"
+          style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(217,119,6,0.1)' }}>
+            <PillIcon className="w-5 h-5" style={{ color: '#D97706' }} />
+          </div>
           <div>
-            <div className="font-semibold text-sm" style={{ color: '#FFAD00' }}>{tv.medNote}</div>
-            <div className="text-sm mt-0.5" style={{ color: 'var(--t2)' }}>{tv.metropolol}</div>
+            <div className="font-semibold text-sm" style={{ color: '#D97706' }}>{tv.medNote}</div>
+            <div className="text-sm mt-0.5" style={{ color: '#334155' }}>{tv.metropolol}</div>
           </div>
         </div>
       )}

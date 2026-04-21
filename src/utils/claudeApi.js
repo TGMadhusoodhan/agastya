@@ -211,26 +211,92 @@ export async function generateCaregiverMessage(patient, medication, reason) {
 // ─────────────────────────────────────────────────────────────────────────
 // translateNames — batch-transliterate medicine/person names into target script
 // Returns { original: translated, ... } — falls back to empty {} on error
+// Results are cached in memory + localStorage so repeated calls are instant.
 // ─────────────────────────────────────────────────────────────────────────
+const _translateCache = new Map()  // in-memory cache: cacheKey → result object
+const CACHE_LS_KEY = 'agastya_translate_cache'
+const CACHE_MAX_ENTRIES = 200
+
+function _loadLsCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_LS_KEY)
+    if (raw) {
+      const entries = JSON.parse(raw)
+      for (const [k, v] of entries) _translateCache.set(k, v)
+    }
+  } catch {}
+}
+
+function _saveLsCache() {
+  try {
+    const entries = [..._translateCache.entries()].slice(-CACHE_MAX_ENTRIES)
+    localStorage.setItem(CACHE_LS_KEY, JSON.stringify(entries))
+  } catch {}
+}
+
+_loadLsCache()
+
+// In-flight deduplication: if multiple components request the same language batch simultaneously,
+// collapse them into a single API call.
+const _inflight = new Map()  // `${lang}:${sortedNames}` → Promise
+
 export async function translateNames(names, targetLanguage) {
   if (!targetLanguage || targetLanguage === 'English' || !names || names.length === 0) return {}
-  try {
-    const systemPrompt = `You are a medical transliteration assistant. Transliterate or translate names into the target language script. Return ONLY valid JSON, no markdown, no extra text.`
-    const userPrompt = `Transliterate/translate the following into ${targetLanguage} script.
+
+  // Per-name cache lookup — return cached entries immediately, only fetch missing ones
+  const result = {}
+  const missing = []
+  for (const name of names) {
+    const key = `${targetLanguage}:${name}`
+    if (_translateCache.has(key)) {
+      result[name] = _translateCache.get(key)
+    } else {
+      missing.push(name)
+    }
+  }
+  if (missing.length === 0) return result
+
+  // Deduplicate concurrent requests for the same set of missing names
+  const inflightKey = `${targetLanguage}:${[...missing].sort().join('|')}`
+  if (_inflight.has(inflightKey)) {
+    const fetched = await _inflight.get(inflightKey)
+    for (const name of missing) result[name] = fetched[name] || name
+    return result
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const systemPrompt = `You are a medical transliteration assistant. Transliterate or translate names into the target language script. Return ONLY valid JSON, no markdown, no extra text.`
+      const userPrompt = `Transliterate/translate the following into ${targetLanguage} script.
 Rules:
 - Medication names: use standard pharmaceutical transliteration (phonetic mapping).
 - Person names (doctors, patients): phonetic transliteration into ${targetLanguage} script.
 - Clinic/hospital names: transliterate into ${targetLanguage} script.
 - Keep numbers, dosages, and abbreviations (like mg, OD, BD) as-is in Latin script.
 
-Names to translate: ${JSON.stringify(names)}
+Names to translate: ${JSON.stringify(missing)}
 
 Return ONLY a JSON object mapping each original name to its transliteration:
 { "original name": "transliterated name", ... }`
-    const raw = await callClaude([{ role: 'user', content: userPrompt }], systemPrompt)
-    return parseJSON(raw)
-  } catch {
-    return {}
+      const raw = await callClaude([{ role: 'user', content: userPrompt }], systemPrompt)
+      return parseJSON(raw)
+    } catch {
+      return {}
+    }
+  })()
+
+  _inflight.set(inflightKey, fetchPromise)
+  try {
+    const fetched = await fetchPromise
+    for (const name of missing) {
+      const translated = fetched[name] || name
+      _translateCache.set(`${targetLanguage}:${name}`, translated)
+      result[name] = translated
+    }
+    _saveLsCache()
+    return result
+  } finally {
+    _inflight.delete(inflightKey)
   }
 }
 

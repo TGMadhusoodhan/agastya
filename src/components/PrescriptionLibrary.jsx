@@ -9,13 +9,13 @@ const CONDITION_COLORS = {
   'Fever & Infections': '#FF4D6A',
   Hypertension:         '#00C8FF',
   Diabetes:             '#FFAD00',
-  Respiratory:          '#00E87B',
+  Respiratory:          '#059669',
   'Mental Health':      '#9F6EFF',
   'Pain/Inflammation':  '#FF6B35',
 }
 
 function getConditionColor(cat) {
-  return CONDITION_COLORS[cat] || '#3D5E52'
+  return CONDITION_COLORS[cat] || '#64748B'
 }
 
 function daysRemaining(expiryDate) {
@@ -34,13 +34,13 @@ function PrescriptionCard({ prescription, onView, tp, tx, lang }) {
   return (
     <div
       className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02]"
-      style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.08)', backdropFilter: 'blur(20px)' }}
+      style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}
       onClick={() => onView(prescription)}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}35`; e.currentTarget.style.boxShadow = `0 0 20px ${color}08` }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,232,123,0.08)'; e.currentTarget.style.boxShadow = 'none' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}40`; e.currentTarget.style.boxShadow = `0 4px 16px ${color}12` }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.05)' }}
     >
       {/* Color top strip */}
-      <div className="h-1" style={{ background: color, boxShadow: `0 0 8px ${color}50` }} />
+      <div className="h-1.5" style={{ background: color }} />
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -54,8 +54,8 @@ function PrescriptionCard({ prescription, onView, tp, tx, lang }) {
             className="shrink-0 text-xs px-2 py-0.5 rounded-full font-semibold"
             style={
               prescription.status === 'active'
-                ? { background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.2)' }
-                : { background: 'rgba(255,255,255,0.04)', color: 'var(--t3)', border: '1px solid rgba(255,255,255,0.08)' }
+                ? { background: 'rgba(5,150,105,0.08)', color: '#059669', border: '1px solid rgba(5,150,105,0.18)' }
+                : { background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }
             }
           >
             {prescription.status === 'active' ? tp.active_label : tp.expired_label}
@@ -92,7 +92,7 @@ function PrescriptionCard({ prescription, onView, tp, tx, lang }) {
           <div className="flex items-center gap-2">
             {prescription.status === 'active' && earliest !== undefined && (
               <span className="text-xs font-semibold"
-                style={{ color: earliest <= 3 ? '#FF4D6A' : earliest <= 7 ? '#FFAD00' : '#00E87B' }}>
+                style={{ color: earliest <= 3 ? '#DC2626' : earliest <= 7 ? '#D97706' : '#059669' }}>
                 {earliest}d left
               </span>
             )}
@@ -167,7 +167,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
       {/* Header */}
       <div
         className="relative rounded-2xl p-5 overflow-hidden"
-        style={{ background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)' }}
+        style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 6px 24px rgba(37,99,235,0.22)' }}
       >
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,232,123,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,232,123,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 flex items-center justify-between">
@@ -180,7 +180,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
           <button
             onClick={onScanNew}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl font-semibold text-sm transition-all"
-            style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.25)' }}
+            style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
           >
             <ClipboardIcon className="w-4 h-4" /> {tp.scanNew}
           </button>
@@ -196,14 +196,14 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full rounded-2xl pl-10 pr-4 py-3 text-sm outline-none"
-          style={{ background: 'rgba(10,22,34,0.75)', border: '1px solid rgba(0,232,123,0.1)', color: 'var(--t1)' }}
+          style={{ background: '#fff', border: '1px solid #E2E8F0', color: '#0F172A', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}
         />
       </div>
 
       {/* View mode tabs */}
       <div
         className="flex gap-1.5 p-1.5 rounded-2xl"
-        style={{ background: 'rgba(10,22,34,0.75)', border: '1px solid rgba(0,232,123,0.08)' }}
+        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
       >
         {[
           { id: 'date',    Icon: CalendarIcon, label: tp.byDate    },
@@ -216,8 +216,8 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
             className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
             style={
               viewMode === tab.id
-                ? { background: 'rgba(0,232,123,0.1)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.25)' }
-                : { color: 'var(--t3)', border: '1px solid transparent' }
+                ? { background: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)' }
+                : { color: '#64748B', border: '1px solid transparent' }
             }
           >
             <tab.Icon className="w-3.5 h-3.5" />{tab.label}
@@ -227,7 +227,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
 
       {/* Results */}
       {Object.keys(grouped).length === 0 ? (
-        <div className="rounded-2xl p-14 text-center" style={{ background: 'rgba(10,22,34,0.6)', border: '1px solid rgba(0,232,123,0.08)' }}>
+        <div className="rounded-2xl p-14 text-center" style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
           <ClipboardIcon className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t4)' }} />
           <p className="font-bold" style={{ color: 'var(--t1)' }}>{tp.noFound}</p>
           <p className="text-sm mt-1" style={{ color: 'var(--t3)' }}>{tp.noFoundSub(search)}</p>
@@ -235,7 +235,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
             <button
               onClick={onScanNew}
               className="mt-4 px-5 py-2 rounded-2xl text-sm font-black transition-all"
-              style={{ background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 16px rgba(0,232,123,0.2)' }}
+              style={{ background: 'linear-gradient(135deg,#1D56DB,#2563EB)', color: '#fff', boxShadow: '0 4px 16px rgba(37,99,235,0.28)' }}
             >
               {tp.scanFirst}
             </button>
@@ -248,7 +248,7 @@ export default function PrescriptionLibrary({ prescriptions, onView, onScanNew, 
               <div className="section-divider mb-3">
                 <span>{group}</span>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(0,232,123,0.1)', color: '#00E87B' }}>
+                  style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB' }}>
                   {items.length}
                 </span>
               </div>

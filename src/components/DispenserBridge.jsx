@@ -6,10 +6,10 @@ import { auth } from '../utils/firebase.js'
 
 // ── Countdown config ────────────────────────────────────────────────────────
 const COUNT_CFG = {
-  3: { color: '#FFAD00', bg: 'rgba(255,173,0,0.08)',   label: 'Preparing dispenser...'    },
-  2: { color: '#FF7A00', bg: 'rgba(255,122,0,0.08)',   label: 'Activating compartment...' },
-  1: { color: '#FF4D6A', bg: 'rgba(255,77,106,0.08)',  label: 'Dispensing...'             },
-  0: { color: '#00E87B', bg: 'rgba(0,232,123,0.08)',   label: 'Releasing tablet...'       },
+  3: { color: '#D97706', bg: '#FFFBEB',   label: 'Preparing dispenser...'    },
+  2: { color: '#EA580C', bg: '#FFF7ED',   label: 'Activating compartment...' },
+  1: { color: '#DC2626', bg: '#FEF2F2',   label: 'Dispensing...'             },
+  0: { color: '#059669', bg: '#F0FDF4',   label: 'Releasing tablet...'       },
 }
 
 const STEP_LABELS = ['Command sent', 'Animation playing', 'Email sending']
@@ -45,10 +45,10 @@ function Checkmark() {
       <div className="check-wrap" style={{ opacity: 0 }}>
         <svg viewBox="0 0 52 52" className="w-20 h-20">
           <circle className="check-circle" cx="26" cy="26" r="25"
-            fill="none" stroke="#00E87B" strokeWidth="2" />
+            fill="none" stroke="#059669" strokeWidth="2" />
           <path className="check-tick"
             d="M14 26 l8 8 l16-16"
-            fill="none" stroke="#00E87B" strokeWidth="2.5"
+            fill="none" stroke="#059669" strokeWidth="2.5"
             strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
@@ -62,14 +62,14 @@ function StepPill({ label, done, active }) {
     <div
       className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all"
       style={
-        done   ? { background: 'rgba(0,232,123,0.12)', color: '#00E87B',  border: '1px solid rgba(0,232,123,0.25)' }
-        : active ? { background: 'rgba(0,200,255,0.1)',  color: '#00C8FF',  border: '1px solid rgba(0,200,255,0.25)' }
-                : { background: 'rgba(255,255,255,0.03)', color: 'var(--t4)', border: '1px solid rgba(255,255,255,0.06)' }
+        done   ? { background: '#F0FDF4', color: '#059669', border: '1px solid #BBF7D0' }
+        : active ? { background: '#F0F9FF', color: '#0891B2', border: '1px solid #BAE6FD' }
+                : { background: '#F8FAFC', color: '#94A3B8', border: '1px solid #E2E8F0' }
       }
     >
       {done ? '✓' : active ? (
         <span className="inline-block w-3 h-3 border-2 rounded-full animate-spin"
-          style={{ borderColor: 'rgba(0,200,255,0.2)', borderTopColor: '#00C8FF' }} />
+          style={{ borderColor: '#BAE6FD', borderTopColor: '#0891B2' }} />
       ) : '○'}
       {label}
     </div>
@@ -81,7 +81,7 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
   const [phase,       setPhase]       = useState('idle')
   const [countdown,   setCountdown]   = useState(3)
   const [statusMsg,   setStatusMsg]   = useState('')
-  const [dispStep,    setDispStep]    = useState(0)   // 0=pending, 1=sent, 2=polling, 3=emailing
+  const [dispStep,    setDispStep]    = useState(0)
   const [dispensedAt, setDispensedAt] = useState(null)
   const resetRef = useRef(null)
 
@@ -114,14 +114,12 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
 
   // ── Main flow ─────────────────────────────────────────────────────────────
   const handleDispense = async () => {
-    // Phase 1 — COUNTDOWN
     setPhase('countdown')
     setCountdown(3); await sleep(1000)
     setCountdown(2); await sleep(1000)
     setCountdown(1); await sleep(1000)
     setCountdown(0); await sleep(700)
 
-    // Phase 2 — FIRE REQUEST
     setPhase('dispensing')
     setDispStep(0)
     setStatusMsg('Sending to Agastya Dispenser...')
@@ -136,17 +134,14 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
       if (!response.ok) throw new Error('Dispenser error')
       result = await response.json()
 
-      // Phase 3 — POLL BLENDER
       setDispStep(1)
       setStatusMsg('Blender simulation playing...')
       await pollForCompletion()
 
-      // Phase 4 — EMAIL
       setDispStep(2)
       setStatusMsg('Sending confirmation email...')
       await sendEmail(result)
 
-      // Phase 5 — COMPLETE
       setDispStep(3)
       setPhase('complete')
       setDispensedAt(new Date().toLocaleTimeString())
@@ -166,35 +161,35 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
   }
 
   // ── RENDER ────────────────────────────────────────────────────────────────
-  const card = { background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,232,123,0.12)', backdropFilter: 'blur(20px)', borderRadius: '1.5rem', padding: '1.5rem' }
+  const card = { background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.06)', borderRadius: '1.5rem', padding: '1.5rem' }
 
   // ── idle ─────────────────────────────────────────────────────────────────
   if (phase === 'idle') return (
     <div style={card} className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--t3)' }}>AI Dispenser</span>
+        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>AI Dispenser</span>
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full pulse-live" style={{ background: '#00E87B' }} />
-          <span className="text-xs font-semibold" style={{ color: '#00E87B' }}>Ready</span>
+          <div className="w-2 h-2 rounded-full pulse-live" style={{ background: '#059669' }} />
+          <span className="text-xs font-semibold" style={{ color: '#059669' }}>Ready</span>
         </div>
       </div>
 
       <div className="flex items-center gap-3 p-3 rounded-2xl"
-        style={{ background: 'rgba(0,232,123,0.05)', border: '1px solid rgba(0,232,123,0.1)' }}>
+        style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
         <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-lg shrink-0"
-          style={{ background: 'rgba(0,232,123,0.15)', color: '#00E87B' }}>
+          style={{ background: 'rgba(5,150,105,0.12)', color: '#059669' }}>
           {compartment}
         </div>
         <div>
-          <div className="font-bold text-sm" style={{ color: 'var(--t1)' }}>{drug}</div>
-          <div className="text-xs" style={{ color: 'var(--t3)' }}>{dose} — {trayName} Tray</div>
+          <div className="font-bold text-sm" style={{ color: '#0F172A' }}>{drug}</div>
+          <div className="text-xs" style={{ color: '#64748B' }}>{dose} — {trayName} Tray</div>
         </div>
       </div>
 
       <button
         onClick={handleDispense}
         className="w-full py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
-        style={{ background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 20px rgba(0,232,123,0.3)' }}
+        style={{ background: 'linear-gradient(135deg,#1D56DB,#2563EB)', color: '#fff', boxShadow: '0 4px 20px rgba(37,99,235,0.25)' }}
       >
         <PillIcon className="w-4 h-4" /> Dispense Now — {trayName} Tray
       </button>
@@ -205,7 +200,7 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
   if (phase === 'countdown') {
     const cfg = COUNT_CFG[countdown]
     return (
-      <div style={{ ...card, border: `1px solid ${cfg.color}30`, background: `rgba(10,22,34,0.92)` }}
+      <div style={{ ...card, background: cfg.bg, border: `1px solid ${cfg.color}30` }}
         className="space-y-4 text-center">
         <style>{`
           @keyframes count-pulse {
@@ -216,23 +211,23 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
         `}</style>
 
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--t3)' }}>Dispenser Countdown</span>
-          <div className="w-2 h-2 rounded-full" style={{ background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>Dispenser Countdown</span>
+          <div className="w-2 h-2 rounded-full" style={{ background: cfg.color }} />
         </div>
 
         <div
           className="count-num font-black leading-none"
-          style={{ fontSize: 96, color: cfg.color, textShadow: `0 0 40px ${cfg.color}60`, letterSpacing: '-0.05em' }}
+          style={{ fontSize: 96, color: cfg.color, letterSpacing: '-0.05em' }}
         >
           {countdown || '✓'}
         </div>
 
-        <div className="text-sm font-semibold" style={{ color: 'var(--t2)' }}>{cfg.label}</div>
+        <div className="text-sm font-semibold" style={{ color: '#334155' }}>{cfg.label}</div>
 
         <div className="flex items-center gap-2 justify-center">
           {[3, 2, 1].map(n => (
             <div key={n} className="w-8 h-1 rounded-full transition-all duration-500"
-              style={{ background: countdown <= n ? cfg.color : 'rgba(255,255,255,0.06)' }} />
+              style={{ background: countdown <= n ? cfg.color : '#E2E8F0' }} />
           ))}
         </div>
       </div>
@@ -244,8 +239,8 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
     <div style={card} className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-5 h-5 border-2 rounded-full animate-spin shrink-0"
-          style={{ borderColor: 'rgba(0,200,255,0.2)', borderTopColor: '#00C8FF' }} />
-        <span className="text-sm font-semibold" style={{ color: '#00C8FF' }}>{statusMsg}</span>
+          style={{ borderColor: '#BAE6FD', borderTopColor: '#0891B2' }} />
+        <span className="text-sm font-semibold" style={{ color: '#0891B2' }}>{statusMsg}</span>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -255,14 +250,14 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
       </div>
 
       <div className="rounded-2xl p-3 flex items-center gap-3"
-        style={{ background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.12)' }}>
+        style={{ background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
         <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black"
-          style={{ background: 'rgba(0,200,255,0.12)', color: '#00C8FF' }}>
+          style={{ background: 'rgba(8,145,178,0.12)', color: '#0891B2' }}>
           {compartment}
         </div>
         <div>
-          <div className="font-semibold text-sm" style={{ color: 'var(--t1)' }}>{drug}</div>
-          <div className="text-xs" style={{ color: 'var(--t3)' }}>{dose} — {trayName} Tray</div>
+          <div className="font-semibold text-sm" style={{ color: '#0F172A' }}>{drug}</div>
+          <div className="text-xs" style={{ color: '#64748B' }}>{dose} — {trayName} Tray</div>
         </div>
       </div>
     </div>
@@ -270,29 +265,29 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
 
   // ── complete ─────────────────────────────────────────────────────────────
   if (phase === 'complete') return (
-    <div style={{ ...card, border: '1px solid rgba(0,232,123,0.25)' }} className="space-y-4 text-center">
+    <div style={{ ...card, border: '1px solid #BBF7D0', background: '#F0FDF4' }} className="space-y-4 text-center">
       <div className="flex justify-center">
         <Checkmark />
       </div>
 
       <div>
-        <div className="font-black text-base" style={{ color: '#00E87B' }}>
+        <div className="font-black text-base" style={{ color: '#059669' }}>
           {drug} {dose} dispensed successfully
         </div>
-        <div className="text-xs mt-1" style={{ color: 'var(--t3)' }}>Dispensed at {dispensedAt}</div>
-        <div className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>
+        <div className="text-xs mt-1" style={{ color: '#64748B' }}>Dispensed at {dispensedAt}</div>
+        <div className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
           Confirmation sent to tgmadhusoodhan@gmail.com
         </div>
       </div>
 
-      <div className="text-xs text-center" style={{ color: 'var(--t4)' }}>
+      <div className="text-xs text-center" style={{ color: '#94A3B8' }}>
         Auto-resetting in 5s…
       </div>
 
       <button
         onClick={reset}
         className="w-full py-2.5 rounded-2xl font-bold text-sm transition-all"
-        style={{ background: 'rgba(0,232,123,0.08)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.2)' }}
+        style={{ background: 'rgba(5,150,105,0.08)', color: '#059669', border: '1px solid #BBF7D0' }}
       >
         Dispense Again
       </button>
@@ -301,21 +296,21 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
 
   // ── offline ──────────────────────────────────────────────────────────────
   if (phase === 'offline') return (
-    <div style={{ ...card, border: '1px solid rgba(255,173,0,0.2)' }} className="space-y-4">
+    <div style={{ ...card, border: '1px solid #FDE68A', background: '#FFFBEB' }} className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="text-2xl">⚠️</div>
         <div>
-          <div className="font-bold text-sm" style={{ color: '#FFAD00' }}>Dispenser is offline</div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--t3)' }}>
+          <div className="font-bold text-sm" style={{ color: '#D97706' }}>Dispenser is offline</div>
+          <div className="text-xs mt-0.5" style={{ color: '#64748B' }}>
             Take {drug} {dose} manually from the {trayName} compartment
           </div>
         </div>
       </div>
 
       <div className="rounded-2xl p-3 text-sm"
-        style={{ background: 'rgba(0,232,123,0.05)', border: '1px solid rgba(0,232,123,0.1)' }}>
-        <span style={{ color: '#00E87B' }}>✓ </span>
-        <span style={{ color: 'var(--t2)' }}>
+        style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+        <span style={{ color: '#059669' }}>✓ </span>
+        <span style={{ color: '#334155' }}>
           Email notification sent to tgmadhusoodhan@gmail.com
         </span>
       </div>
@@ -323,7 +318,7 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
       <button
         onClick={reset}
         className="w-full py-2.5 rounded-2xl font-bold text-sm transition-all"
-        style={{ background: 'rgba(255,173,0,0.08)', color: '#FFAD00', border: '1px solid rgba(255,173,0,0.2)' }}
+        style={{ background: '#FFFBEB', color: '#D97706', border: '1px solid #FDE68A' }}
       >
         Retry Connection
       </button>
@@ -332,19 +327,19 @@ export default function DispenserBridge({ compartment, drug, dose, addToast, pat
 
   // ── error ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ ...card, border: '1px solid rgba(255,77,106,0.2)' }} className="space-y-4">
+    <div style={{ ...card, border: '1px solid #FECACA', background: '#FEF2F2' }} className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0"
-          style={{ background: 'rgba(255,77,106,0.1)', color: '#FF4D6A' }}>✕</div>
+          style={{ background: 'rgba(220,38,38,0.08)', color: '#DC2626' }}>✕</div>
         <div>
-          <div className="font-bold text-sm" style={{ color: '#FF4D6A' }}>Dispenser encountered an error</div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--t3)' }}>Please take medication manually</div>
+          <div className="font-bold text-sm" style={{ color: '#DC2626' }}>Dispenser encountered an error</div>
+          <div className="text-xs mt-0.5" style={{ color: '#64748B' }}>Please take medication manually</div>
         </div>
       </div>
 
       <button onClick={reset}
         className="w-full py-2.5 rounded-2xl font-bold text-sm transition-all"
-        style={{ background: 'rgba(255,77,106,0.08)', color: '#FF4D6A', border: '1px solid rgba(255,77,106,0.2)' }}>
+        style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
         Retry
       </button>
     </div>

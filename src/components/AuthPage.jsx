@@ -8,11 +8,20 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth'
 import { auth } from '../utils/firebase.js'
+import { saveUserProfile } from '../utils/userProfile.js'
+
+const LANGUAGES = [
+  { id: 'English',  label: 'English',  native: 'English'  },
+  { id: 'Tamil',    label: 'Tamil',    native: 'தமிழ்'    },
+  { id: 'Hindi',    label: 'Hindi',    native: 'हिन्दी'   },
+  { id: 'Kannada',  label: 'Kannada',  native: 'ಕನ್ನಡ'    },
+  { id: 'Spanish',  label: 'Spanish',  native: 'Español'  },
+]
 
 const inputStyle = {
-  background: 'rgba(10,22,34,0.7)',
-  border: '1px solid rgba(0,232,123,0.15)',
-  color: '#EDFAF3',
+  background: '#fff',
+  border: '1px solid #CBD5E1',
+  color: '#0F172A',
   borderRadius: '0.875rem',
   padding: '0.75rem 1rem',
   width: '100%',
@@ -40,14 +49,15 @@ function PasswordStrength({ pw }) {
 }
 
 export default function AuthPage() {
-  const [mode,    setMode]    = useState('login')   // 'login' | 'signup' | 'reset'
-  const [name,    setName]    = useState('')
-  const [email,   setEmail]   = useState('')
-  const [pw,      setPw]      = useState('')
-  const [pwConf,  setPwConf]  = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [info,    setInfo]    = useState('')
+  const [mode,     setMode]     = useState('login')   // 'login' | 'signup' | 'reset'
+  const [name,     setName]     = useState('')
+  const [email,    setEmail]    = useState('')
+  const [pw,       setPw]       = useState('')
+  const [pwConf,   setPwConf]   = useState('')
+  const [language, setLanguage] = useState('English')
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
+  const [info,     setInfo]     = useState('')
 
   const clearMessages = () => { setError(''); setInfo('') }
 
@@ -89,6 +99,11 @@ export default function AuthPage() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw)
       await updateProfile(cred.user, { displayName: name.trim() })
+      await saveUserProfile(cred.user.uid, {
+        displayName: name.trim(),
+        language,
+        createdAt: new Date().toISOString(),
+      })
       await sendEmailVerification(cred.user)
       setInfo(`Account created! A verification email was sent to ${email.trim()}.`)
       // User is now logged in — App.jsx will receive the auth state update
@@ -113,17 +128,17 @@ export default function AuthPage() {
     }
   }
 
-  const switchMode = (m) => { setMode(m); clearMessages(); setPw(''); setPwConf('') }
+  const switchMode = (m) => { setMode(m); clearMessages(); setPw(''); setPwConf(''); setLanguage('English') }
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ background: '#060C10' }}
+      style={{ background: 'linear-gradient(135deg, #EFF3FB 0%, #E3EBF8 100%)' }}
     >
       {/* Ambient blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,232,123,0.06) 0%, transparent 70%)' }} />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,200,255,0.05) 0%, transparent 70%)' }} />
+        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(8,145,178,0.05) 0%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -132,12 +147,12 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div
             className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl font-black mx-auto mb-4"
-            style={{ background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.25)', boxShadow: '0 0 40px rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 8px 32px rgba(37,99,235,0.28)' }}
           >
-            <span style={{ color: '#00E87B', textShadow: '0 0 20px rgba(0,232,123,0.6)' }}>आ</span>
+            <span style={{ color: '#fff' }}>आ</span>
           </div>
-          <h1 className="text-2xl font-black" style={{ color: '#00E87B' }}>Agastya</h1>
-          <p className="text-xs mt-1 font-semibold uppercase tracking-widest" style={{ color: '#3D5E52' }}>
+          <h1 className="text-2xl font-black" style={{ color: '#0F172A' }}>Agastya</h1>
+          <p className="text-xs mt-1 font-semibold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
             AI Medication Intelligence
           </p>
         </div>
@@ -145,16 +160,16 @@ export default function AuthPage() {
         {/* Card */}
         <div
           className="rounded-3xl p-7 space-y-5"
-          style={{ background: 'rgba(10,22,34,0.85)', border: '1px solid rgba(0,232,123,0.12)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
+          style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 8px 32px rgba(15,23,42,0.08), 0 24px 64px rgba(15,23,42,0.05)' }}
         >
           {/* Title */}
           <div>
-            <h2 className="text-xl font-black" style={{ color: '#EDFAF3' }}>
+            <h2 className="text-xl font-black" style={{ color: '#0F172A' }}>
               {mode === 'login'  ? 'Welcome back'    :
                mode === 'signup' ? 'Create account'  :
                                    'Reset password'}
             </h2>
-            <p className="text-sm mt-0.5" style={{ color: '#3D5E52' }}>
+            <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
               {mode === 'login'  ? 'Sign in to your Agastya account'      :
                mode === 'signup' ? 'Set up your personal medication AI'   :
                                    'Enter your email and we\'ll send a link'}
@@ -164,13 +179,13 @@ export default function AuthPage() {
           {/* Error / Info banners */}
           {error && (
             <div className="rounded-2xl px-4 py-3 text-sm font-medium"
-              style={{ background: 'rgba(255,77,106,0.08)', border: '1px solid rgba(255,77,106,0.25)', color: '#FF4D6A' }}>
+              style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
               {error}
             </div>
           )}
           {info && (
             <div className="rounded-2xl px-4 py-3 text-sm font-medium"
-              style={{ background: 'rgba(0,232,123,0.07)', border: '1px solid rgba(0,232,123,0.2)', color: '#00E87B' }}>
+              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#059669' }}>
               {info}
             </div>
           )}
@@ -194,9 +209,44 @@ export default function AuthPage() {
                   onChange={e => setName(e.target.value)}
                   required
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = 'rgba(0,232,123,0.4)' }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(0,232,123,0.15)' }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(37,99,235,0.5)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(37,99,235,0.2)' }}
                 />
+              </div>
+            )}
+
+            {/* Language — signup only */}
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: '#3D5E52' }}>
+                  Preferred Language
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {LANGUAGES.map(lang => {
+                    const active = language === lang.id
+                    return (
+                      <button
+                        key={lang.id}
+                        type="button"
+                        onClick={() => setLanguage(lang.id)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+                        style={
+                          active
+                            ? { background: 'rgba(37,99,235,0.1)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.3)', boxShadow: '0 2px 8px rgba(37,99,235,0.08)' }
+                            : { background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0' }
+                        }
+                      >
+                        <span style={{ fontSize: '0.95em' }}>{lang.native}</span>
+                        {active && (
+                          <span style={{ color: '#00E87B', fontSize: '0.7em', fontWeight: 800 }}>✓</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs" style={{ color: '#1C3028' }}>
+                  AI instructions will be translated to {LANGUAGES.find(l => l.id === language)?.label}.
+                </p>
               </div>
             )}
 
@@ -213,8 +263,8 @@ export default function AuthPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 style={inputStyle}
-                onFocus={e => { e.target.style.borderColor = 'rgba(0,232,123,0.4)' }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(0,232,123,0.15)' }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(37,99,235,0.5)' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(37,99,235,0.2)' }}
               />
             </div>
 
@@ -232,8 +282,8 @@ export default function AuthPage() {
                   onChange={e => setPw(e.target.value)}
                   required
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = 'rgba(0,232,123,0.4)' }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(0,232,123,0.15)' }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(37,99,235,0.5)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(37,99,235,0.2)' }}
                 />
                 {mode === 'signup' && <PasswordStrength pw={pw} />}
               </div>
@@ -253,8 +303,8 @@ export default function AuthPage() {
                   onChange={e => setPwConf(e.target.value)}
                   required
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = 'rgba(0,232,123,0.4)' }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(0,232,123,0.15)' }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(37,99,235,0.5)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(37,99,235,0.2)' }}
                 />
                 {pwConf && pw !== pwConf && (
                   <p className="mt-1 text-xs" style={{ color: '#FF4D6A' }}>Passwords do not match</p>
@@ -268,9 +318,9 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full py-3.5 rounded-2xl font-black text-sm transition-all disabled:opacity-50 mt-1"
               style={{
-                background: loading ? 'rgba(0,200,100,0.4)' : 'linear-gradient(135deg,#00C864,#00E87B)',
-                color: '#04100A',
-                boxShadow: loading ? 'none' : '0 4px 20px rgba(0,232,123,0.25)',
+                background: loading ? '#93C5FD' : 'linear-gradient(135deg,#1D56DB,#2563EB)',
+                color: '#fff',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(37,99,235,0.28)',
               }}
             >
               {loading
@@ -287,37 +337,37 @@ export default function AuthPage() {
                 <button
                   onClick={() => switchMode('reset')}
                   className="block w-full text-xs font-semibold transition-all"
-                  style={{ color: '#3D5E52' }}
-                  onMouseEnter={e => { e.target.style.color = '#00E87B' }}
-                  onMouseLeave={e => { e.target.style.color = '#3D5E52' }}
+                  style={{ color: '#94A3B8' }}
+                  onMouseEnter={e => { e.target.style.color = '#2563EB' }}
+                  onMouseLeave={e => { e.target.style.color = '#94A3B8' }}
                 >
                   Forgot your password?
                 </button>
-                <p className="text-sm" style={{ color: '#3D5E52' }}>
+                <p className="text-sm" style={{ color: '#64748B' }}>
                   No account?{' '}
-                  <button onClick={() => switchMode('signup')} className="font-bold transition-all" style={{ color: '#00E87B' }}>
+                  <button onClick={() => switchMode('signup')} className="font-bold transition-all" style={{ color: '#2563EB' }}>
                     Sign up
                   </button>
                 </p>
               </>
             )}
             {mode === 'signup' && (
-              <p className="text-sm" style={{ color: '#3D5E52' }}>
+              <p className="text-sm" style={{ color: '#64748B' }}>
                 Already have an account?{' '}
-                <button onClick={() => switchMode('login')} className="font-bold" style={{ color: '#00E87B' }}>
+                <button onClick={() => switchMode('login')} className="font-bold" style={{ color: '#2563EB' }}>
                   Sign in
                 </button>
               </p>
             )}
             {mode === 'reset' && (
-              <button onClick={() => switchMode('login')} className="text-sm font-bold" style={{ color: '#00E87B' }}>
+              <button onClick={() => switchMode('login')} className="text-sm font-bold" style={{ color: '#2563EB' }}>
                 ← Back to Sign In
               </button>
             )}
           </div>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: '#1E3329' }}>
+        <p className="text-center text-xs mt-6" style={{ color: '#CBD5E1' }}>
           Knowledge · Care · Intelligence
         </p>
       </div>

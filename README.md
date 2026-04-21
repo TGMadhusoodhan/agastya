@@ -26,17 +26,19 @@ Agastya is an AI-powered medication management web app built for Indian househol
 ### Prescription Library
 - All scanned prescriptions stored locally in **IndexedDB** — no server required
 - Browse prescriptions by date, diagnosis, or doctor
-- Full detail view per prescription including all medications
+- Full detail view per prescription including all medications with dispense controls
 
 ### Medication Schedule
 - Daily schedule split into **Morning / Afternoon / Night** slots
 - Mark medications as taken with one tap — live adherence tracking
 - Shows days remaining for time-limited courses
 - Medications auto-expire and are removed from the schedule when their course ends
+- Adherence state persists in `localStorage` and resets automatically each day
 
 ### Smart Dispenser Integration
 - Sends dispense commands to a physical **IoT pill dispenser** over local HTTP (`localhost:5000`)
 - Each medication is assigned a compartment number (morning = 1, afternoon = 2, night = 3)
+- Full animated countdown + step-by-step status (command sent → Blender animation → email confirmation)
 - A companion **Flask bridge server** (`dispenser-bridge/server.py`) coordinates between the React app and a Blender 3D animation of the dispenser
 - Gracefully falls back when the dispenser is offline
 
@@ -55,17 +57,20 @@ Agastya is an AI-powered medication management web app built for Indian househol
 
 ### Multilingual UI + Voice
 - Full UI available in: **English, Hindi, Tamil, Kannada, Spanish**
-- Claude AI transliterates medication and patient names into the patient's script
+- Language preference set at signup and persisted in **Firestore** — syncs across devices and sessions
+- Claude AI transliterates medication and patient names into the patient's script, with a **translation cache** (memory + localStorage) so repeated language switches are instant
 - **Pharmacy Voice Mode** — full-screen mode to show pharmacists, with voice readout of medication name and instructions in the patient's language
 - Uses the **Web Speech API** with smart voice selection
 
-### Firebase Authentication
+### Firebase Authentication + Firestore
 - Email/password sign-in and sign-up with email verification
 - Password reset flow
 - Auth state drives the entire app — unauthenticated users see a dedicated login page
+- User language preference stored in **Firestore** (`users/{uid}`) and loaded automatically on every login
 
 ### Patient Profile
 - Editable name, age, language, medical conditions, and caregiver contact
+- Language changes saved to Firestore and applied immediately across the UI
 - Profile drives AI personalisation across all scans and translations
 
 ---
@@ -78,7 +83,8 @@ Agastya is an AI-powered medication management web app built for Indian househol
 | Styling | Tailwind CSS 3 + custom CSS variables |
 | AI / Vision | Claude API (`claude-opus-4-5`) — vision + text |
 | Auth | Firebase Authentication |
-| Local Storage | IndexedDB via `idb` (with `localStorage` fallback) |
+| Profile Storage | Firebase Firestore |
+| Local Storage | IndexedDB via `idb` |
 | Email Alerts | EmailJS |
 | Voice Output | Web Speech API (`speechSynthesis`) |
 | Dispenser Bridge | Flask + Flask-CORS (Python) |
@@ -102,11 +108,11 @@ agastya/
 │   │   ├── PrescriptionLibrary.jsx    # All saved prescriptions list
 │   │   ├── PrescriptionDetail.jsx     # Single prescription detail view
 │   │   ├── Schedule.jsx               # Daily medication schedule by slot
-│   │   ├── DispenserBridge.jsx        # Dispenser UI — countdown + polling
+│   │   ├── DispenserBridge.jsx        # Dispenser UI — countdown + polling + email
 │   │   ├── DispenserSettings.jsx      # Manually add/remove/pause medications
 │   │   ├── VitalsPanel.jsx            # Live vitals with sync
 │   │   ├── AdherenceHistory.jsx       # Adherence history table
-│   │   ├── PatientProfile.jsx         # Edit patient info + caregiver contact
+│   │   ├── PatientProfile.jsx         # Edit patient info + Firestore save
 │   │   ├── CaregiverAlert.jsx         # AI-generated caregiver email UI
 │   │   ├── PharmacyVoice.jsx          # Full-screen pharmacy voice mode
 │   │   ├── VoiceOutput.jsx            # Voice readout component
@@ -115,7 +121,8 @@ agastya/
 │   ├── utils/
 │   │   ├── claudeApi.js               # All Claude API calls — scan, prescribe, translate, alert
 │   │   ├── prescriptionDB.js          # IndexedDB CRUD + auto-expiry logic
-│   │   ├── firebase.js                # Firebase app + auth initialisation
+│   │   ├── firebase.js                # Firebase app + auth + Firestore initialisation
+│   │   ├── userProfile.js             # Firestore read/write for user language + prefs
 │   │   ├── dispenser.js               # IoT dispenser HTTP client
 │   │   ├── emailAlert.js              # EmailJS caregiver alert sender
 │   │   ├── voiceEngine.js             # Web Speech API wrapper (Chrome/Linux safe)
@@ -147,7 +154,7 @@ agastya/
 - **Node.js** 18 or later
 - **npm** 7 or later
 - An **Anthropic API key** — get one at [console.anthropic.com](https://console.anthropic.com)
-- A **Firebase project** with Authentication enabled — [console.firebase.google.com](https://console.firebase.google.com)
+- A **Firebase project** with Authentication + Firestore enabled — [console.firebase.google.com](https://console.firebase.google.com)
 - (Optional) Python 3.9+ with Flask for the physical dispenser bridge
 
 ---
@@ -167,13 +174,7 @@ npm install
 
 ### 3. Set up environment variables
 
-Create a `.env` file in the project root (copy from `.env.example`):
-
-```bash
-cp .env.example .env
-```
-
-Then fill in your values:
+Create a `.env` file in the project root:
 
 ```env
 # ── Anthropic (required) ───────────────────────────────────────────────
@@ -190,6 +191,7 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 # ── EmailJS (optional — for caregiver alerts) ──────────────────────────
 VITE_EMAILJS_SERVICE_ID=your_service_id
 VITE_EMAILJS_TEMPLATE_ID=your_template_id
+VITE_EMAILJS_DISPENSER_TEMPLATE_ID=your_dispenser_template_id
 VITE_EMAILJS_PUBLIC_KEY=your_public_key
 ```
 
@@ -198,7 +200,21 @@ VITE_EMAILJS_PUBLIC_KEY=your_public_key
 #### Firebase setup
 1. Go to [console.firebase.google.com](https://console.firebase.google.com) and create a project.
 2. Under **Authentication → Sign-in method**, enable **Email/Password**.
-3. Under **Project Settings → Your apps**, add a Web app and copy the config values into your `.env`.
+3. Under **Firestore Database**, click **Create database** (choose production mode, any region).
+4. Under **Firestore → Rules**, publish these rules:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+5. Under **Project Settings → Your apps**, add a Web app and copy the config values into your `.env`.
 
 ### 4. Start the development server
 
@@ -246,7 +262,7 @@ systemctl --user enable --now speech-dispatcher
 sudo apt install espeak-ng speech-dispatcher
 ```
 
-Restart your browser after installing. Run `diagnoseVoices()` in the browser console (from `src/utils/voiceEngine.js`) to check detected voices.
+Restart your browser after installing.
 
 ---
 

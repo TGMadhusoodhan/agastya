@@ -7,9 +7,9 @@ import PharmacyVoice  from './PharmacyVoice.jsx'
 import { AlertIcon, InfoIcon, CheckCircleIcon, HeartIcon, PillIcon, CheckIcon } from './Icons.jsx'
 
 const SEVERITY_STYLE = {
-  high:   { bg: 'rgba(255,77,106,0.08)',  border: 'rgba(255,77,106,0.25)',  color: '#FF4D6A' },
-  medium: { bg: 'rgba(255,173,0,0.08)',   border: 'rgba(255,173,0,0.25)',   color: '#FFAD00' },
-  low:    { bg: 'rgba(255,173,0,0.05)',   border: 'rgba(255,173,0,0.15)',   color: '#FFAD00' },
+  high:   { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' },
+  medium: { bg: '#FFFBEB', border: '#FDE68A', color: '#D97706' },
+  low:    { bg: '#FFFBEB', border: '#FEF3C7', color: '#D97706' },
 }
 
 const TRANSLATED_LANGS = ['Tamil', 'Spanish']
@@ -48,7 +48,7 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
     compartment: result.compartment || 1,
   }
 
-  const cardStyle = { background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)' }
+  const cardStyle = { background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04)', borderRadius: '1rem' }
 
   return (
     <>
@@ -81,8 +81,8 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
           </div>
 
           {/* English instructions */}
-          <div className="rounded-2xl p-4" style={{ background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.12)' }}>
-            <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#00C8FF' }}>
+          <div className="rounded-2xl p-4" style={{ background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
+            <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#0891B2' }}>
               Instructions (English)
             </div>
             <p className="font-medium" style={{ color: 'var(--t1)' }}>{result.simplifiedInstructions}</p>
@@ -139,17 +139,17 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
           {/* Safe */}
           {(!result.interactions || result.interactions.length === 0) && (
             <div className="rounded-2xl p-3 flex items-center gap-2 text-sm"
-              style={{ background: 'rgba(0,232,123,0.06)', border: '1px solid rgba(0,232,123,0.15)' }}>
-              <CheckCircleIcon className="w-4 h-4 shrink-0" style={{ color: '#00E87B' }} />
-              <span style={{ color: '#00E87B' }}>No known interactions with current medications</span>
+              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+              <CheckCircleIcon className="w-4 h-4 shrink-0" style={{ color: '#059669' }} />
+              <span style={{ color: '#059669' }}>No known interactions with current medications</span>
             </div>
           )}
 
           {/* Side effects + storage */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {result.sideEffects?.length > 0 && (
-              <div className="rounded-2xl p-3" style={{ background: 'rgba(0,232,123,0.03)', border: '1px solid rgba(0,232,123,0.08)' }}>
-                <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--t3)' }}>
+              <div className="rounded-2xl p-3" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#64748B' }}>
                   Common Side Effects
                 </div>
                 <ul className="space-y-1">
@@ -162,8 +162,8 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
               </div>
             )}
             {result.storageInstructions && (
-              <div className="rounded-2xl p-3" style={{ background: 'rgba(0,232,123,0.03)', border: '1px solid rgba(0,232,123,0.08)' }}>
-                <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--t3)' }}>
+              <div className="rounded-2xl p-3" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#64748B' }}>
                   Storage
                 </div>
                 <p className="text-sm" style={{ color: 'var(--t2)' }}>{result.storageInstructions}</p>
@@ -173,14 +173,14 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
 
           {/* Compartment assignment */}
           <div className="rounded-2xl p-3 flex items-center gap-3"
-            style={{ background: 'rgba(0,232,123,0.07)', border: '1px solid rgba(0,232,123,0.2)' }}>
+            style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.15)' }}>
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shrink-0"
-              style={{ background: 'rgba(0,232,123,0.2)', color: '#00E87B' }}>
+              style={{ background: 'rgba(37,99,235,0.12)', color: '#2563EB' }}>
               {result.compartment}
             </div>
             <div>
-              <div className="text-xs" style={{ color: 'var(--t3)' }}>AI Dispenser Assignment</div>
-              <div className="font-bold" style={{ color: '#00E87B' }}>
+              <div className="text-xs" style={{ color: '#64748B' }}>AI Dispenser Assignment</div>
+              <div className="font-bold" style={{ color: '#2563EB' }}>
                 Compartment {result.compartment} —{' '}
                 {result.slot === 'morning' ? 'Morning' : result.slot === 'afternoon' ? 'Afternoon' : result.slot === 'night' ? 'Night' : 'Multiple'}
               </div>
@@ -224,7 +224,7 @@ export default function MedAnalysis({ result, patient, activeMedications, onAddT
               style={
                 added
                   ? { background: 'rgba(0,232,123,0.06)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.15)' }
-                  : { background: 'linear-gradient(135deg,#00C864,#00E87B)', color: '#04100A', boxShadow: '0 4px 16px rgba(0,232,123,0.2)' }
+                  : { background: 'linear-gradient(135deg,#1D56DB,#2563EB)', color: '#fff', boxShadow: '0 4px 16px rgba(37,99,235,0.2)' }
               }
             >
               {added ? <><CheckIcon className="w-4 h-4" /> Added</> : '+ Schedule'}

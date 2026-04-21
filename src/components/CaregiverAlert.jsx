@@ -1,4 +1,4 @@
-// src/components/CaregiverAlert.jsx — dark glass
+// src/components/CaregiverAlert.jsx — light medical
 import { useState } from 'react'
 import { sendCaregiverAlert } from '../utils/emailAlert.js'
 import { generateCaregiverMessage } from '../utils/claudeApi.js'
@@ -13,9 +13,9 @@ const ALERT_REASONS = [
 ]
 
 const inputStyle = {
-  background: 'rgba(10,22,34,0.7)',
-  border: '1px solid rgba(0,232,123,0.12)',
-  color: '#EDFAF3',
+  background: '#fff',
+  border: '1px solid #CBD5E1',
+  color: '#0F172A',
   borderRadius: '0.875rem',
   padding: '0.5rem 0.75rem',
   width: '100%',
@@ -59,34 +59,34 @@ export default function CaregiverAlert({ patient, medication, addToast }) {
     } finally { setSending(false) }
   }
 
-  const cardStyle = { background: 'rgba(10,22,34,0.8)', border: '1px solid rgba(0,232,123,0.1)', backdropFilter: 'blur(20px)', borderRadius: '1.5rem', padding: '1.5rem' }
+  const cardStyle = { background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.06)', borderRadius: '1.5rem', padding: '1.5rem' }
 
   if (sent) return (
-    <div className="rounded-3xl p-8 text-center" style={{ background: 'rgba(0,232,123,0.07)', border: '1px solid rgba(0,232,123,0.2)' }}>
-      <CheckCircleIcon className="w-12 h-12 mx-auto mb-3" style={{ color: '#00E87B' }} />
-      <div className="font-bold text-lg" style={{ color: '#00E87B' }}>Alert sent to {caregiverName}</div>
-      <div className="text-sm mt-1" style={{ color: 'var(--t3)' }}>{caregiverEmail}</div>
-      <button onClick={() => setSent(false)} className="mt-4 text-sm underline" style={{ color: '#00E87B' }}>Send another</button>
+    <div className="rounded-3xl p-8 text-center" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+      <CheckCircleIcon className="w-12 h-12 mx-auto mb-3" style={{ color: '#059669' }} />
+      <div className="font-bold text-lg" style={{ color: '#059669' }}>Alert sent to {caregiverName}</div>
+      <div className="text-sm mt-1" style={{ color: '#64748B' }}>{caregiverEmail}</div>
+      <button onClick={() => setSent(false)} className="mt-4 text-sm underline" style={{ color: '#059669' }}>Send another</button>
     </div>
   )
 
   return (
     <div style={cardStyle} className="space-y-4">
-      <h3 className="font-black text-lg" style={{ color: 'var(--t1)' }}>Alert Caregiver</h3>
+      <h3 className="font-black text-lg" style={{ color: '#0F172A' }}>Alert Caregiver</h3>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--t3)' }}>Caregiver Name</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: '#64748B' }}>Caregiver Name</label>
           <input value={caregiverName} onChange={e => setCaregiverName(e.target.value)} style={inputStyle} placeholder="Name" />
         </div>
         <div>
-          <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--t3)' }}>Email</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: '#64748B' }}>Email</label>
           <input value={caregiverEmail} onChange={e => setCaregiverEmail(e.target.value)} type="email" style={inputStyle} placeholder="email@example.com" />
         </div>
       </div>
 
       <div>
-        <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--t3)' }}>Alert Reason</label>
+        <label className="text-xs font-semibold mb-1 block" style={{ color: '#64748B' }}>Alert Reason</label>
         <select value={reason} onChange={e => setReason(e.target.value)} style={inputStyle}>
           {ALERT_REASONS.map(r => <option key={r}>{r}</option>)}
         </select>
@@ -100,14 +100,14 @@ export default function CaregiverAlert({ patient, medication, addToast }) {
         onClick={handleGenerate}
         disabled={generating}
         className="w-full py-2.5 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-        style={{ background: 'rgba(0,232,123,0.08)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.2)' }}
+        style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)' }}
       >
         {generating ? 'Generating…' : <><SparkleIcon className="w-4 h-4" /> Generate AI Message</>}
       </button>
 
       {message && (
         <div>
-          <label className="text-xs font-semibold mb-1 block" style={{ color: 'var(--t3)' }}>Message Preview</label>
+          <label className="text-xs font-semibold mb-1 block" style={{ color: '#64748B' }}>Message Preview</label>
           <textarea
             value={message}
             onChange={e => setMessage(e.target.value)}
@@ -118,9 +118,9 @@ export default function CaregiverAlert({ patient, medication, addToast }) {
       )}
 
       {/* SMS preview */}
-      <div className="rounded-2xl p-3" style={{ background: 'rgba(0,232,123,0.05)', border: '1px solid rgba(0,232,123,0.1)' }}>
-        <div className="text-xs font-bold mb-2" style={{ color: 'var(--t3)' }}>SMS Preview (Demo)</div>
-        <div className="text-xs px-3 py-2 rounded-2xl rounded-bl-none inline-block max-w-xs" style={{ background: 'rgba(0,232,123,0.15)', color: '#00E87B' }}>
+      <div className="rounded-2xl p-3" style={{ background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
+        <div className="text-xs font-bold mb-2" style={{ color: '#64748B' }}>SMS Preview (Demo)</div>
+        <div className="text-xs px-3 py-2 rounded-2xl rounded-bl-none inline-block max-w-xs" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
           Agastya Alert: {patient.name} — {medication?.name} — {reason === 'Custom alert' ? customReason : reason}
         </div>
       </div>

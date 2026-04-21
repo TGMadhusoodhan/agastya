@@ -1,4 +1,4 @@
-// src/components/Schedule.jsx — dark glass
+// src/components/Schedule.jsx
 import { useState } from 'react'
 import DispenserBridge from './DispenserBridge.jsx'
 import PharmacyVoice   from './PharmacyVoice.jsx'
@@ -6,10 +6,18 @@ import { SunriseIcon, SunIcon, MoonIcon, PillIcon, PharmacyIcon, CheckIcon, Circ
 import { useT } from '../contexts/LanguageContext.jsx'
 
 const SLOT_STYLE = {
-  morning:   { Icon: SunriseIcon,  accent: '#FFB800', headerBg: 'rgba(255,184,0,0.08)',   border: 'rgba(255,184,0,0.2)'  },
-  afternoon: { Icon: SunIcon,      accent: '#FF6B35', headerBg: 'rgba(255,107,53,0.08)',  border: 'rgba(255,107,53,0.2)' },
-  night:     { Icon: MoonIcon,     accent: '#00C8FF', headerBg: 'rgba(0,200,255,0.08)',   border: 'rgba(0,200,255,0.2)'  },
+  morning:   { Icon: SunriseIcon, accent: '#D97706', bg: '#FFFBEB', headerBg: '#FEF3C7', border: '#FDE68A',  dot: '#F59E0B' },
+  afternoon: { Icon: SunIcon,     accent: '#EA580C', bg: '#FFF7ED', headerBg: '#FFEDD5', border: '#FED7AA',  dot: '#F97316' },
+  night:     { Icon: MoonIcon,    accent: '#0891B2', bg: '#F0F9FF', headerBg: '#E0F2FE', border: '#BAE6FD',  dot: '#38BDF8' },
 }
+
+const CARD = {
+  background: '#fff',
+  border: '1px solid #E2E8F0',
+  boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+}
+
+const TODAY_KEY = `agastya_taken_${new Date().toISOString().split('T')[0]}`
 
 function daysRemaining(expiryDate) {
   if (!expiryDate) return null
@@ -20,59 +28,45 @@ function MedCard({ med, taken, onToggle, onPharmacy, addToast, t }) {
   const [showDispenser, setShowDispenser] = useState(false)
   const days      = med.expiryDate ? daysRemaining(med.expiryDate) : null
   const isExpired = days !== null && days <= 0
+  const expiryColor = isExpired ? '#94A3B8' : days <= 2 ? '#DC2626' : days <= 5 ? '#D97706' : '#059669'
 
   return (
     <div
       className="rounded-2xl p-4 transition-all"
       style={{
-        background: taken
-          ? 'rgba(0,232,123,0.05)'
-          : isExpired
-          ? 'rgba(255,255,255,0.02)'
-          : 'rgba(10,22,34,0.75)',
-        border: taken
-          ? '1px solid rgba(0,232,123,0.18)'
-          : isExpired
-          ? '1px solid rgba(255,255,255,0.05)'
-          : '1px solid rgba(0,232,123,0.1)',
-        backdropFilter: 'blur(20px)',
-        opacity: isExpired ? 0.5 : 1,
+        ...CARD,
+        background: taken ? 'rgba(5,150,105,0.03)' : isExpired ? '#FAFAFA' : '#fff',
+        border: taken ? '1px solid rgba(5,150,105,0.2)' : isExpired ? '1px solid #F1F5F9' : '1px solid #E2E8F0',
+        opacity: isExpired ? 0.6 : 1,
       }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div
             className={`font-bold text-sm truncate ${taken ? 'line-through' : ''}`}
-            style={{ color: taken ? 'var(--t4)' : 'var(--t1)' }}
+            style={{ color: taken ? '#94A3B8' : '#0F172A' }}
           >
             {med.name}
           </div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--t3)' }}>{med.dosage}</div>
+          <div className="text-xs mt-0.5" style={{ color: '#64748B' }}>{med.dosage}</div>
           {med.frequency && (
-            <div className="text-xs" style={{ color: 'var(--t4)' }}>{med.frequency}</div>
+            <div className="text-xs" style={{ color: '#94A3B8' }}>{med.frequency}</div>
           )}
 
           {med.autoExpire && days !== null && (
-            <div
-              className="mt-1 text-xs font-semibold"
-              style={{
-                color: isExpired ? 'var(--t4)' :
-                       days <= 2 ? '#FF4D6A' :
-                       days <= 5 ? '#FFAD00' : '#00E87B',
-              }}
-            >
+            <div className="mt-1 text-xs font-semibold" style={{ color: expiryColor }}>
               {isExpired ? t.schedule.courseComplete : t.schedule.daysLeft(days)}
             </div>
           )}
 
           <div className="flex items-center gap-1 mt-1.5">
             <span
-              className="w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold shrink-0"
-              style={{ background: 'rgba(0,232,123,0.15)', color: '#00E87B' }}
+              className="w-5 h-5 rounded-lg text-[10px] flex items-center justify-center font-bold shrink-0"
+              style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB' }}
             >
               {med.compartment || 1}
             </span>
-            <span className="text-[10px]" style={{ color: 'var(--t4)' }}>{t.schedule.aiAssigned}</span>
+            <span className="text-[10px]" style={{ color: '#94A3B8' }}>{t.schedule.aiAssigned}</span>
           </div>
         </div>
 
@@ -82,10 +76,10 @@ function MedCard({ med, taken, onToggle, onPharmacy, addToast, t }) {
           className="shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all"
           style={
             taken
-              ? { background: '#00E87B', borderColor: '#00E87B', color: '#04100A' }
+              ? { background: '#059669', borderColor: '#059669', color: '#fff', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }
               : isExpired
-              ? { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: 'var(--t4)' }
-              : { background: 'transparent', borderColor: 'rgba(0,232,123,0.2)', color: 'rgba(0,232,123,0.3)' }
+              ? { background: '#F8FAFC', borderColor: '#E2E8F0', color: '#CBD5E1' }
+              : { background: '#fff', borderColor: '#E2E8F0', color: '#CBD5E1' }
           }
         >
           {taken ? <CheckIcon className="w-5 h-5" /> : <CircleIcon className="w-5 h-5" />}
@@ -97,14 +91,14 @@ function MedCard({ med, taken, onToggle, onPharmacy, addToast, t }) {
           <button
             onClick={() => setShowDispenser(v => !v)}
             className="flex-1 text-xs py-1.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-1"
-            style={{ background: 'rgba(0,232,123,0.07)', color: '#00E87B', border: '1px solid rgba(0,232,123,0.15)' }}
+            style={{ background: 'rgba(37,99,235,0.07)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.15)' }}
           >
             <PillIcon className="w-3.5 h-3.5" /> {t.schedule.dispense}
           </button>
           <button
             onClick={() => onPharmacy(med)}
             className="flex-1 text-xs py-1.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-1"
-            style={{ background: 'rgba(0,200,255,0.07)', color: '#00C8FF', border: '1px solid rgba(0,200,255,0.15)' }}
+            style={{ background: 'rgba(8,145,178,0.07)', color: '#0891B2', border: '1px solid rgba(8,145,178,0.15)' }}
           >
             <PharmacyIcon className="w-3.5 h-3.5" /> {t.schedule.pharmacy}
           </button>
@@ -121,12 +115,21 @@ function MedCard({ med, taken, onToggle, onPharmacy, addToast, t }) {
 }
 
 export default function Schedule({ activeMedications = [], patient, addToast }) {
-  const [taken,       setTaken]       = useState({})
+  const [taken, setTaken] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(TODAY_KEY) || '{}') }
+    catch { return {} }
+  })
   const [pharmacyMed, setPharmacyMed] = useState(null)
   const patientLanguage = patient?.language || 'Tamil'
   const t = useT()
 
-  const toggleTaken = (key) => setTaken(prev => ({ ...prev, [key]: !prev[key] }))
+  const toggleTaken = (key) => {
+    setTaken(prev => {
+      const next = { ...prev, [key]: !prev[key] }
+      try { localStorage.setItem(TODAY_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   const slots = {
     morning:   activeMedications.filter(m => m.slot === 'morning'   || m.slot === 'multiple'),
@@ -137,7 +140,10 @@ export default function Schedule({ activeMedications = [], patient, addToast }) 
   const total      = activeMedications.length
   const takenCount = Object.values(taken).filter(Boolean).length
   const adherence  = total > 0 ? Math.round((takenCount / total) * 100) : 0
+  const allDone    = total > 0 && takenCount === total
   const today      = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
+  const adherenceColor = adherence >= 80 ? '#059669' : adherence >= 50 ? '#D97706' : '#DC2626'
 
   return (
     <div className="space-y-5">
@@ -148,42 +154,54 @@ export default function Schedule({ activeMedications = [], patient, addToast }) 
       {/* Header */}
       <div
         className="relative rounded-2xl p-6 overflow-hidden"
-        style={{
-          background: 'rgba(10,22,34,0.85)',
-          border: '1px solid rgba(0,232,123,0.15)',
-          backdropFilter: 'blur(20px)',
-        }}
+        style={{ background: 'linear-gradient(135deg, #1D56DB, #2563EB)', boxShadow: '0 6px 24px rgba(37,99,235,0.22)' }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,232,123,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,232,123,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--t1)' }}>{t.schedule.title}</h2>
-            <p className="text-sm" style={{ color: 'var(--t3)' }}>{today}</p>
+            <h2 className="text-2xl font-black mb-1" style={{ color: '#fff' }}>{t.schedule.title}</h2>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>{today}</p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-black" style={{ color: '#00E87B', textShadow: '0 0 16px rgba(0,232,123,0.45)' }}>
-              {adherence}%
-            </div>
-            <div className="text-xs" style={{ color: 'var(--t3)' }}>{t.schedule.adherence}</div>
+            <div className="text-3xl font-black" style={{ color: '#fff' }}>{adherence}%</div>
+            <div className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>{t.schedule.adherence}</div>
           </div>
         </div>
-        <div className="relative z-10 mt-4 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <div className="relative z-10 mt-4 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.2)' }}>
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${adherence}%`, background: 'linear-gradient(90deg,#00C864,#00E87B)', boxShadow: '0 0 8px rgba(0,232,123,0.5)' }}
+            style={{ width: `${adherence}%`, background: '#fff' }}
           />
         </div>
-        <div className="relative z-10 mt-1 text-xs" style={{ color: 'var(--t4)' }}>
+        <div className="relative z-10 mt-1 text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
           {t.schedule.takenOf(takenCount, total)}
         </div>
       </div>
 
+      {/* All done celebration */}
+      {allDone && (
+        <div
+          className="bounce-in rounded-2xl p-6 text-center"
+          style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', boxShadow: '0 1px 3px rgba(5,150,105,0.08)' }}
+        >
+          <div className="text-5xl mb-3">🎉</div>
+          <div className="font-black text-xl mb-1" style={{ color: '#059669' }}>All doses taken!</div>
+          <div className="text-sm" style={{ color: '#64748B' }}>Great job staying on track today.</div>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.2)' }}>
+            <div className="w-2 h-2 rounded-full pulse-live" style={{ background: '#059669' }} />
+            <span className="text-xs font-bold" style={{ color: '#059669' }}>100% Adherence Today</span>
+          </div>
+        </div>
+      )}
+
       {/* No medications */}
       {total === 0 && (
-        <div className="rounded-2xl p-12 text-center" style={{ background: 'rgba(10,22,34,0.6)', border: '1px solid rgba(0,232,123,0.08)' }}>
-          <PillIcon className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--t4)' }} />
-          <p className="font-bold text-lg" style={{ color: 'var(--t1)' }}>{t.schedule.noMedsTitle}</p>
-          <p className="text-sm mt-1" style={{ color: 'var(--t3)' }}>{t.schedule.noMedsDesc}</p>
+        <div className="rounded-2xl p-12 text-center" style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: '#F1F5F9' }}>
+            <PillIcon className="w-8 h-8" style={{ color: '#CBD5E1' }} />
+          </div>
+          <p className="font-bold text-lg" style={{ color: '#0F172A' }}>{t.schedule.noMedsTitle}</p>
+          <p className="text-sm mt-1" style={{ color: '#64748B' }}>{t.schedule.noMedsDesc}</p>
         </div>
       )}
 
@@ -203,11 +221,11 @@ export default function Schedule({ activeMedications = [], patient, addToast }) 
                   <div className="flex items-center gap-2">
                     <cfg.Icon className="w-5 h-5" style={{ color: cfg.accent }} />
                     <div>
-                      <div className="font-bold text-sm" style={{ color: 'var(--t1)' }}>{slotLabel}</div>
-                      <div className="text-xs" style={{ color: 'var(--t3)' }}>{slotTime}</div>
+                      <div className="font-bold text-sm" style={{ color: '#0F172A' }}>{slotLabel}</div>
+                      <div className="text-xs" style={{ color: '#64748B' }}>{slotTime}</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${cfg.accent}20`, color: cfg.accent }}>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#fff', color: cfg.accent, border: `1px solid ${cfg.border}` }}>
                     {meds.length}
                   </span>
                 </div>
@@ -215,7 +233,7 @@ export default function Schedule({ activeMedications = [], patient, addToast }) 
                 <div className="flex flex-col gap-3">
                   {meds.length === 0 ? (
                     <div className="rounded-2xl border-2 border-dashed p-6 text-center text-sm"
-                      style={{ borderColor: 'rgba(0,232,123,0.08)', color: 'var(--t4)' }}>
+                      style={{ borderColor: '#E2E8F0', color: '#94A3B8', background: '#FAFAFA' }}>
                       No medications
                     </div>
                   ) : (
