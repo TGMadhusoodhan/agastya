@@ -26,6 +26,8 @@ import VitalsPanel           from './components/VitalsPanel.jsx'
 import AdherenceHistory      from './components/AdherenceHistory.jsx'
 import PatientProfile        from './components/PatientProfile.jsx'
 import DispenserSettings     from './components/DispenserSettings.jsx'
+import Reconcile             from './components/Reconcile.jsx'
+import { runReconcile, getCachedReconcile, clearReconcileCache } from './utils/reconcileApi.js'
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 const TOAST_COLORS = {
@@ -91,6 +93,8 @@ export default function App() {
   const [prescriptionSubView,   setPrescriptionSubView]   = useState('library')
   const [toasts,                setToasts]                = useState([])
   const [initialized,           setInitialized]           = useState(false)
+  const [reconcileResult,       setReconcileResult]       = useState(() => getCachedReconcile())
+  const [reconciling,           setReconciling]           = useState(false)
   const toastCounter = useRef(0)
 
   // Keep patient.name in sync with Firebase displayName; load language from Firestore
@@ -171,6 +175,11 @@ export default function App() {
       await refreshAll()
       addToast(`${medCount} medication${medCount !== 1 ? 's' : ''} added to Agastya dispenser`, 'success')
       setPrescriptionSubView('library')
+      // background reconcile after new prescription
+      clearReconcileCache()
+      runReconcile(patient, { force: true })
+        .then(r => setReconcileResult(r))
+        .catch(() => {})
     } catch (err) {
       console.error('handlePrescriptionSaved:', err)
       addToast('Failed to save prescription. Please try again.', 'error')
@@ -181,6 +190,21 @@ export default function App() {
     setPatient(updated)
     addToast('Profile updated', 'success')
   }, [addToast])
+
+  const handleReanalyze = useCallback(async () => {
+    setReconciling(true)
+    clearReconcileCache()
+    try {
+      const result = await runReconcile(patient, { force: true })
+      setReconcileResult(result)
+      const count = result.totalConflicts || result.conflicts?.length || 0
+      if (count > 0) addToast(`${count} conflict${count !== 1 ? 's' : ''} found across your prescriptions`, 'warning')
+    } catch {
+      addToast('Reconcile analysis failed. Please try again.', 'error')
+    } finally {
+      setReconciling(false)
+    }
+  }, [patient, addToast])
 
   const handleScanResult = useCallback((result) => setScanResult(result), [])
 
@@ -211,6 +235,7 @@ export default function App() {
             patient={patient}
             activeMedications={activeMedications}
             onTabChange={handleTabChange}
+            reconcileResult={reconcileResult}
           />
         )
 
@@ -264,6 +289,17 @@ export default function App() {
 
       case 'profile':
         return <PatientProfile patient={patient} onUpdate={handlePatientUpdate} addToast={addToast} />
+
+      case 'reconcile':
+        return (
+          <Reconcile
+            patient={patient}
+            reconcileResult={reconcileResult}
+            onReanalyze={handleReanalyze}
+            analyzing={reconciling}
+            addToast={addToast}
+          />
+        )
 
       case 'settings':
         return (
@@ -335,7 +371,11 @@ export default function App() {
     <LanguageContext.Provider value={patient.language || 'English'}>
       <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
         <ToastBar toasts={toasts} onRemove={removeToast} />
-        <Navbar activeTab={activeTab} onTabChange={handleTabChange} />
+        <Navbar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          conflictCount={reconcileResult?.totalConflicts || reconcileResult?.conflicts?.length || 0}
+        />
         <main className="max-w-5xl mx-auto px-4 pt-20 pb-24 md:pb-8">
           <div key={activeTab} className="fade-up">
             {renderContent()}

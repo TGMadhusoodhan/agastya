@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useT } from '../contexts/LanguageContext.jsx'
 import {
   HomeIcon, CameraIcon, ClipboardIcon, CalendarIcon,
-  PulseIcon, BarChartIcon, UserIcon, SettingsIcon, MenuIcon, XIcon,
+  PulseIcon, BarChartIcon, UserIcon, SettingsIcon, MenuIcon, XIcon, ShieldIcon,
 } from './Icons.jsx'
 
 const ICON_MAP = {
@@ -12,20 +12,23 @@ const ICON_MAP = {
   prescriptions: ClipboardIcon,
   schedule:      CalendarIcon,
   vitals:        PulseIcon,
+  reconcile:     ShieldIcon,
   history:       BarChartIcon,
   profile:       UserIcon,
   settings:      SettingsIcon,
 }
 
-const TAB_IDS = ['home','scan','prescriptions','schedule','vitals','history','profile','settings']
+const TAB_IDS = ['home','prescriptions','reconcile','schedule','scan','vitals','history','settings','profile']
 
-export default function Navbar({ activeTab, onTabChange }) {
+export default function Navbar({ activeTab, onTabChange, conflictCount = 0 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const t = useT()
 
   const TABS        = TAB_IDS.map(id => ({ id, label: t.nav[id] || id, Icon: ICON_MAP[id] }))
   const BOTTOM_MAIN = TABS.slice(0, 5)
   const BOTTOM_MORE = TABS.slice(5)
+
+  const hasBadge = (id) => id === 'reconcile' && conflictCount > 0
 
   const handleTab = (id) => { onTabChange(id); setMenuOpen(false) }
 
@@ -76,6 +79,12 @@ export default function Navbar({ activeTab, onTabChange }) {
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {label}
+                  {hasBadge(id) && (
+                    <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-black flex items-center justify-center"
+                      style={{ background: '#EF4444', color: '#fff' }}>
+                      {conflictCount}
+                    </span>
+                  )}
                   {active && (
                     <span
                       className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full"
@@ -104,6 +113,9 @@ export default function Navbar({ activeTab, onTabChange }) {
                   }
                 >
                   <Icon className="w-4 h-4" />
+                  {hasBadge(id) && (
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#EF4444' }} />
+                  )}
                 </button>
               )
             })}
@@ -206,7 +218,7 @@ export default function Navbar({ activeTab, onTabChange }) {
                   <button
                     key={id}
                     onClick={() => handleTab(id)}
-                    className="flex flex-col items-center gap-1.5 py-2 px-5 rounded-2xl transition-all"
+                    className="relative flex flex-col items-center gap-1.5 py-2 px-5 rounded-2xl transition-all"
                     style={
                       active
                         ? { background: 'rgba(37,99,235,0.08)', color: '#2563EB' }
@@ -214,6 +226,9 @@ export default function Navbar({ activeTab, onTabChange }) {
                     }
                   >
                     <Icon className="w-5 h-5" />
+                    {hasBadge(id) && (
+                      <span className="absolute top-1 right-2 w-2 h-2 rounded-full" style={{ background: '#EF4444' }} />
+                    )}
                     <span className="text-xs font-semibold">{label}</span>
                   </button>
                 )

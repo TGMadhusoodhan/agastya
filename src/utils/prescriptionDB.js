@@ -290,6 +290,25 @@ export async function extendMedicationExpiry(medicationId, extraDays) {
   }
 }
 
+export async function getActivePrescriptionsForReconcile() {
+  try {
+    const all = await getAllPrescriptions()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return all.filter(p => {
+      if (!p.medications || p.medications.length === 0) return false
+      return p.medications.some(m => {
+        if (m.status === 'expired') return false
+        if (!m.expiryDate) return true
+        return new Date(m.expiryDate) > today
+      })
+    })
+  } catch (err) {
+    console.error('getActivePrescriptionsForReconcile error:', err)
+    return []
+  }
+}
+
 export async function updateMedicationInDispenser(id, updates) {
   try {
     const db = await initDB()

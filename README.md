@@ -35,6 +35,25 @@ Agastya is an AI-powered medication management web app built for Indian househol
 - Medications auto-expire and are removed from the schedule when their course ends
 - Adherence state persists in `localStorage` and resets automatically each day
 
+### Agastya Reconcile — Full Picture
+- Detects **cross-doctor medication conflicts** when a patient sees multiple specialists who don't know each other's prescriptions
+- Four conflict types: **duplicate therapy** (same drug class twice), **dangerous combination**, **counteracting** (one drug cancels another), **cumulative overdose** (same active ingredient from different sources)
+- Overall risk rating: **High / Medium / Low** with a colour-coded risk banner
+- Each conflict shows severity badge, type, plain-English description, and a "what to do" recommendation with the involved doctors named
+- **Safe medications** list confirms which drugs from different prescribers are safe together
+- **Doctor Letter** — AI-generated printable reconciliation letter the patient can bring to every doctor visit
+- Results cached for 4 hours in `localStorage`; re-analysis triggered automatically after each new prescription is saved
+- Conflict count badge appears on the **Full Picture** nav tab whenever conflicts are detected
+
+### Smart Dashboard
+- **Today's Actions** — contextual action cards replace static quick-links, driven entirely by real patient state:
+  - Medications due in the current time slot (Morning / Afternoon / Evening)
+  - Cross-doctor conflicts detected (taps through to Full Picture)
+  - Medications expiring within 7 days
+  - Adherence drop below 70%
+  - Fallback "all clear" card when everything is on track
+- Each card taps directly to the relevant screen
+
 ### Smart Dispenser Integration
 - Sends dispense commands to a physical **IoT pill dispenser** over local HTTP (`localhost:5000`)
 - Each medication is assigned a compartment number (morning = 1, afternoon = 2, night = 3)
@@ -89,6 +108,7 @@ Agastya is an AI-powered medication management web app built for Indian househol
 | Voice Output | Web Speech API (`speechSynthesis`) |
 | Dispenser Bridge | Flask + Flask-CORS (Python) |
 | Hardware | IoT pill dispenser + Blender 3D animation (optional) |
+| Reconcile Cache | `localStorage` (4-hour TTL) |
 
 ---
 
@@ -110,6 +130,9 @@ agastya/
 │   │   ├── Schedule.jsx               # Daily medication schedule by slot
 │   │   ├── DispenserBridge.jsx        # Dispenser UI — countdown + polling + email
 │   │   ├── DispenserSettings.jsx      # Manually add/remove/pause medications
+│   │   ├── Reconcile.jsx              # Full Picture — cross-doctor conflict view
+│   │   ├── ConflictBadge.jsx          # SeverityBadge, ConflictTypeBadge, RiskBanner
+│   │   ├── DoctorLetter.jsx           # Printable medication reconciliation letter
 │   │   ├── VitalsPanel.jsx            # Live vitals with sync
 │   │   ├── AdherenceHistory.jsx       # Adherence history table
 │   │   ├── PatientProfile.jsx         # Edit patient info + Firestore save
@@ -119,8 +142,9 @@ agastya/
 │   │   ├── Navbar.jsx                 # Responsive bottom nav bar
 │   │   └── Icons.jsx                  # All SVG icon components
 │   ├── utils/
-│   │   ├── claudeApi.js               # All Claude API calls — scan, prescribe, translate, alert
+│   │   ├── claudeApi.js               # All Claude API calls — scan, prescribe, translate, alert, reconcile
 │   │   ├── prescriptionDB.js          # IndexedDB CRUD + auto-expiry logic
+│   │   ├── reconcileApi.js            # Reconcile orchestration + 4-hour localStorage cache
 │   │   ├── firebase.js                # Firebase app + auth + Firestore initialisation
 │   │   ├── userProfile.js             # Firestore read/write for user language + prefs
 │   │   ├── dispenser.js               # IoT dispenser HTTP client
@@ -306,6 +330,7 @@ Output goes to `dist/`. Deploy to any static host — Netlify, Vercel, Nginx, et
 - [ ] Physical dispenser firmware — Arduino / Raspberry Pi companion code
 - [ ] Doctor portal — prescription verification and digital signing
 - [ ] Refill reminders + nearby pharmacy locator
+- [ ] Reconcile push alert — notify caregiver when a new critical conflict is detected
 
 ---
 

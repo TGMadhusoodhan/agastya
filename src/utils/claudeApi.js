@@ -301,6 +301,108 @@ Return ONLY a JSON object mapping each original name to its transliteration:
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// reconcileAllPrescriptions — cross-doctor conflict detection
+// ─────────────────────────────────────────────────────────────────────────
+export async function reconcileAllPrescriptions(prescriptions, patient) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const medicationsByDoctor = (prescriptions || []).map(p => ({
+    doctor: p.doctorName,
+    clinic: p.clinicName,
+    diagnosis: p.diagnosis,
+    date: p.date,
+    medications: (p.medications || []).filter(m => {
+      if (m.status === 'expired') return false
+      if (!m.expiryDate) return true
+      return new Date(m.expiryDate) > today
+    }).map(m => ({ name: m.name, dosage: m.dosage, frequency: m.frequency || m.frequencyCode })),
+  })).filter(d => d.medications.length > 0)
+
+  const empty = {
+    overallRisk: 'low',
+    totalConflicts: 0,
+    conflicts: [],
+    safeMedications: [],
+    fullPictureSummary: '',
+    doctorLetterText: '',
+    analyzedAt: new Date().toISOString(),
+  }
+
+  if (medicationsByDoctor.length < 2) {
+    const allMeds = medicationsByDoctor.flatMap(d =>
+      d.medications.map(m => ({ name: m.name, dosage: m.dosage, doctor: d.doctor, reason: 'No cross-doctor conflicts possible with a single prescriber.' }))
+    )
+    return {
+      ...empty,
+      safeMedications: allMeds,
+      fullPictureSummary: medicationsByDoctor.length === 0
+        ? 'No active prescriptions found.'
+        : 'All active medications are from a single prescriber. No cross-doctor conflicts to analyze.',
+    }
+  }
+
+  const systemPrompt = `You are Agastya, an expert clinical pharmacist AI specializing in polypharmacy and cross-prescriber medication reconciliation. Detect conflicts when a patient sees multiple doctors who do not know what the others prescribed. Return ONLY valid JSON — no markdown, no explanation.`
+
+  const medList = medicationsByDoctor.map(d =>
+    `${d.doctor} (${d.clinic} — ${d.diagnosis}, ${d.date}):\n` +
+    d.medications.map(m => `  - ${m.name} ${m.dosage || ''} ${m.frequency || ''}`).join('\n')
+  ).join('\n\n')
+
+  const userPrompt = `Patient: ${patient?.name || 'Unknown'}, Age: ${patient?.age || 'Unknown'}
+Conditions: ${(patient?.conditions || []).join(', ') || 'Not specified'}
+
+This patient sees multiple doctors. Each doctor prescribed without knowing the others' medications.
+
+Medications by prescriber:
+${medList}
+
+Detect ALL conflicts across prescribers. Types:
+- duplicate_therapy: Same drug class from two doctors (e.g. two beta-blockers)
+- dangerous_combination: Documented dangerous drug-drug interaction
+- counteracting: One drug undoes another's therapeutic effect
+- cumulative_overdose: Same drug or active ingredient from multiple sources
+
+Return ONLY this JSON (no markdown):
+{
+  "overallRisk": "high|medium|low",
+  "totalConflicts": number,
+  "conflicts": [
+    {
+      "type": "duplicate_therapy|dangerous_combination|counteracting|cumulative_overdose",
+      "severity": "high|medium|low",
+      "medications": ["Drug A (Dr. X)", "Drug B (Dr. Y)"],
+      "description": "Plain-English explanation",
+      "recommendation": "What patient or doctor should do",
+      "affectedDoctors": ["Dr. X", "Dr. Y"]
+    }
+  ],
+  "safeMedications": [
+    { "name": "string", "dosage": "string", "doctor": "string", "reason": "why it is safe" }
+  ],
+  "fullPictureSummary": "2–3 sentence plain-English summary for the patient",
+  "doctorLetterText": "Formal letter the patient can print and show each doctor, listing all current medications and any conflicts found"
+}`
+
+  try {
+    const responseText = await callClaude([{ role: 'user', content: userPrompt }], systemPrompt)
+    return { ...parseJSON(responseText), analyzedAt: new Date().toISOString() }
+  } catch (err) {
+    console.error('reconcileAllPrescriptions error:', err)
+    return {
+      overallRisk: 'unknown',
+      totalConflicts: 0,
+      conflicts: [],
+      safeMedications: [],
+      fullPictureSummary: 'Analysis could not be completed. Please check your internet connection and try again.',
+      doctorLetterText: '',
+      error: true,
+      analyzedAt: new Date().toISOString(),
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // translateInstructions
 // ─────────────────────────────────────────────────────────────────────────
 export async function translateInstructions(text, targetLanguage) {

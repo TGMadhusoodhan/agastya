@@ -8,6 +8,7 @@ import {
   HeartIcon, PillIcon, CheckCircleIcon, CalendarIcon,
   DropletIcon, BrainIcon, MoonIcon, CameraIcon,
   BarChartIcon, UserIcon, SettingsIcon, ClipboardIcon,
+  AlertIcon, ShieldIcon, ChevronRightIcon, ClockIcon,
 } from './Icons.jsx'
 
 const CARD = {
@@ -182,8 +183,43 @@ function VBar({ Icon, label, value, unit, pct, color, status }) {
   )
 }
 
+// ── Action item row ───────────────────────────────────────────────────────
+function ActionItem({ Icon, color, title, subtitle, tab, onTabChange, urgent = false, badge = null }) {
+  return (
+    <button
+      onClick={() => onTabChange(tab)}
+      className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all hover:-translate-y-0.5"
+      style={{
+        background: urgent ? `${color}08` : '#F8FAFC',
+        border: `1px solid ${urgent ? `${color}25` : '#F1F5F9'}`,
+        boxShadow: urgent ? `0 2px 12px ${color}10` : 'none',
+      }}
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: `${color}12` }}
+      >
+        <Icon className="w-5 h-5" style={{ color }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-sm" style={{ color: '#0F172A' }}>{title}</div>
+        <div className="text-xs mt-0.5 truncate" style={{ color: '#64748B' }}>{subtitle}</div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {badge && (
+          <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-black flex items-center justify-center"
+            style={{ background: color, color: '#fff' }}>
+            {badge}
+          </span>
+        )}
+        <ChevronRightIcon className="w-4 h-4" style={{ color: '#CBD5E1' }} />
+      </div>
+    </button>
+  )
+}
+
 // ════════════════════════════════════════════════════════════════════════
-export default function Dashboard({ patient, activeMedications, onTabChange }) {
+export default function Dashboard({ patient, activeMedications, onTabChange, reconcileResult }) {
   const t    = useT()
   const td   = t.dashboard
   const lang = useLang()
@@ -228,14 +264,73 @@ export default function Dashboard({ patient, activeMedications, onTabChange }) {
   const greet   = hour < 12 ? td.goodMorning : hour < 17 ? td.goodAfternoon : td.goodEvening
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
-  const ACTIONS = [
-    { label: t.nav.scan,          tab: 'scan',          Icon: CameraIcon,    color: '#2563EB' },
-    { label: t.nav.schedule,      tab: 'schedule',      Icon: CalendarIcon,  color: '#0891B2' },
-    { label: t.nav.vitals,        tab: 'vitals',        Icon: HeartIcon,     color: '#DC2626' },
-    { label: t.nav.history,       tab: 'history',       Icon: BarChartIcon,  color: '#D97706' },
-    { label: t.nav.prescriptions, tab: 'prescriptions', Icon: ClipboardIcon, color: '#7C3AED' },
-    { label: t.nav.settings,      tab: 'settings',      Icon: SettingsIcon,  color: '#64748B' },
-  ]
+  // ── Derive action items from real state ──────────────────────────────
+  const actionItems = useMemo(() => {
+    const items = []
+    const hour = new Date().getHours()
+    const currentSlot = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'night'
+    const slotLabel = currentSlot.charAt(0).toUpperCase() + currentSlot.slice(1)
+
+    const dueMeds = activeMedications.filter(m => m.slot === currentSlot || m.slot === 'multiple')
+    if (dueMeds.length > 0) {
+      items.push({
+        Icon: PillIcon, color: '#D97706', tab: 'schedule', urgent: true, badge: dueMeds.length,
+        title: `${dueMeds.length} medication${dueMeds.length !== 1 ? 's' : ''} due — ${slotLabel}`,
+        subtitle: dueMeds.slice(0, 3).map(m => m.name).join(', ') + (dueMeds.length > 3 ? '…' : ''),
+      })
+    }
+
+    const conflictCount = reconcileResult?.totalConflicts || reconcileResult?.conflicts?.length || 0
+    if (conflictCount > 0) {
+      const criticalCount = reconcileResult?.conflicts?.filter(c => c.severity === 'high').length || 0
+      items.push({
+        Icon: AlertIcon, color: '#DC2626', tab: 'reconcile', urgent: true, badge: conflictCount,
+        title: `${conflictCount} cross-doctor conflict${conflictCount !== 1 ? 's' : ''} detected`,
+        subtitle: criticalCount > 0 ? `${criticalCount} critical — tap to review and show your doctor` : 'Tap to review and show your doctor',
+      })
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const expiringSoon = activeMedications.filter(m => {
+      if (!m.expiryDate || !m.autoExpire) return false
+      const daysLeft = Math.ceil((new Date(m.expiryDate) - today) / (1000 * 60 * 60 * 24))
+      return daysLeft >= 0 && daysLeft <= 7
+    })
+    if (expiringSoon.length > 0) {
+      const first = expiringSoon[0]
+      const daysLeft = Math.ceil((new Date(first.expiryDate) - today) / (1000 * 60 * 60 * 24))
+      items.push({
+        Icon: ClockIcon, color: '#7C3AED', tab: 'prescriptions', urgent: false,
+        title: `${first.name} course ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`,
+        subtitle: expiringSoon.length > 1 ? `+${expiringSoon.length - 1} other medication${expiringSoon.length > 2 ? 's' : ''} also expiring soon` : 'Renew prescription if treatment continues',
+      })
+    }
+
+    if (adh.rate < 70 && adh.total > 0) {
+      items.push({
+        Icon: BarChartIcon, color: '#EA580C', tab: 'history', urgent: false,
+        title: `Adherence at ${adh.rate}% — below target`,
+        subtitle: `${adh.missed} dose${adh.missed !== 1 ? 's' : ''} missed in the last 30 days`,
+      })
+    }
+
+    if (activeMedications.length === 0) {
+      items.push({
+        Icon: CameraIcon, color: '#2563EB', tab: 'scan', urgent: false,
+        title: 'No medications in your schedule',
+        subtitle: 'Scan a pill bottle or prescription to get started',
+      })
+    } else if (items.length === 0) {
+      items.push({
+        Icon: CheckCircleIcon, color: '#059669', tab: 'schedule', urgent: false,
+        title: 'All clear — you\'re on track today',
+        subtitle: `${activeMedications.length} medication${activeMedications.length !== 1 ? 's' : ''} active · no conflicts detected`,
+      })
+    }
+
+    return items
+  }, [activeMedications, reconcileResult, adh])
 
   return (
     <div className="space-y-5">
@@ -465,24 +560,12 @@ export default function Dashboard({ patient, activeMedications, onTabChange }) {
         </div>
       </div>
 
-      {/* ── Quick actions ─────────────────────────────────────────────────── */}
+      {/* ── Smart action items ────────────────────────────────────────────── */}
       <div>
-        <div className="section-divider mb-3"><span>{td.quickActions}</span></div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {ACTIONS.map(({ label, tab, Icon, color }) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className="rounded-2xl p-4 flex flex-col items-center gap-2.5 transition-all duration-200 hover:-translate-y-0.5 group"
-              style={{ background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}35`; e.currentTarget.style.boxShadow = `0 4px 16px ${color}18` }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.04)' }}
-            >
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: `${color}10` }}>
-                <Icon className="w-5 h-5" style={{ color }} />
-              </div>
-              <span className="text-xs font-semibold text-center leading-tight" style={{ color: '#334155' }}>{label}</span>
-            </button>
+        <div className="section-divider mb-3"><span>Today's Actions</span></div>
+        <div className="space-y-2">
+          {actionItems.map((item, i) => (
+            <ActionItem key={i} {...item} onTabChange={onTabChange} />
           ))}
         </div>
       </div>
