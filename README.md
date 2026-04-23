@@ -4,7 +4,7 @@
 
 Agastya is an AI-powered medication management web app built for Indian households. It uses Claude AI vision to scan pill bottle labels and handwritten clinic prescriptions, manages a daily medication schedule with a smart physical dispenser integration, and supports multilingual voice output — making medication management accessible to elderly patients across language barriers.
 
-**Built in 24 hours for [ScarlettHacks](https://scarletthacks.com) hackathon by ACM IIT.**
+
 
 ---
 
@@ -337,5 +337,3 @@ Output goes to `dist/`. Deploy to any static host — Netlify, Vercel, Nginx, et
 ## About
 
 **Agastya** (आगस्त्य) is a revered sage in Indian tradition — a symbol of knowledge, care, and healing across generations. This project was built to help elderly Indian patients who manage multiple medications, often without a caregiver always present, and who may not read English.
-
-Built in 24 hours at **ScarlettHacks** hackathon by **ACM IIT**.
